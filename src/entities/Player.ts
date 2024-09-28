@@ -29,7 +29,7 @@ export enum Direction {
     Left,
     Up,
     Right,
-    Down
+    Down,
 }
 
 export default class Player {
@@ -52,14 +52,19 @@ export default class Player {
 
     public readonly scene: Phaser.Scene;
 
-    constructor(x: number, y: number, worldX: number, worldY: number, scene: Phaser.Scene) {
+    constructor(
+        x: number,
+        y: number,
+        worldX: number,
+        worldY: number,
+        scene: Phaser.Scene
+    ) {
         this.scene = scene;
         this.sprite = scene.physics.add.sprite(x, y, Graphics.player.name, 0);
         this.x = worldX;
         this.y = worldY;
         this.sprite.setSize(8, 8);
         this.sprite.setScale(2);
-        this.sprite.setOffset(8, 18);
         this.sprite.anims.play(Graphics.player.animations.idle.key);
         this.sprite.setDepth(5);
 
@@ -73,7 +78,7 @@ export default class Player {
             w: "w",
             a: "a",
             s: "s",
-            d: "d"
+            d: "d",
         }) as Keys;
 
         this.body = <Phaser.Physics.Arcade.Body>this.sprite.body;
@@ -95,22 +100,21 @@ export default class Player {
     public update(time: number) {
         this.time = time;
         const keys = this.keys;
-        let attackAnim = "";
-        let moveAnim = "";
 
         if (time < this.attackUntil) {
             return;
         }
-    
+
         this.body.setVelocity(0);
 
         if (!keys.left.isDown && !keys.a.isDown) keys.leftNeedsUp = false;
         if (!keys.right.isDown && !keys.d.isDown) keys.rightNeedsUp = false;
         if (!keys.up.isDown && !keys.w.isDown) keys.upNeedsUp = false;
         if (!keys.down.isDown && !keys.s.isDown) keys.downNeedsUp = false;
-    
+
         const left = (keys.left.isDown || keys.a.isDown) && !keys.leftNeedsUp;
-        const right = (keys.right.isDown || keys.d.isDown) && !keys.rightNeedsUp;
+        const right =
+            (keys.right.isDown || keys.d.isDown) && !keys.rightNeedsUp;
         const up = (keys.up.isDown || keys.w.isDown) && !keys.upNeedsUp;
         const down = (keys.down.isDown || keys.s.isDown) && !keys.downNeedsUp;
 
@@ -118,6 +122,5 @@ export default class Player {
         else if (right) this.queuedDirection = Direction.Right;
         else if (up) this.queuedDirection = Direction.Up;
         else if (down) this.queuedDirection = Direction.Down;
-    
     }
 }

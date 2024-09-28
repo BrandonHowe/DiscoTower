@@ -31,7 +31,7 @@ export default class Map {
         // Generate dungeon
         const dungeon = Dungeoneer.build({
             width: width,
-            height: height
+            height: height,
         });
         this.rooms = dungeon.rooms;
 
@@ -56,7 +56,12 @@ export default class Map {
             }
         }
         for (const tile of toReset) {
-            this.tiles[tile.y][tile.x] = new Tile(TileType.None, tile.x, tile.y, this);
+            this.tiles[tile.y][tile.x] = new Tile(
+                TileType.None,
+                tile.x,
+                tile.y,
+                this
+            );
         }
 
         // Starting position of the player
@@ -70,7 +75,7 @@ export default class Map {
             tileWidth: 32,
             tileHeight: 32,
             width,
-            height
+            height,
         });
         const dungeonTiles = this.tilemap.addTilesetImage(
             Graphics.environment.name,
@@ -80,11 +85,19 @@ export default class Map {
             Graphics.environment.margin,
             Graphics.environment.spacing
         );
-        if (dungeonTiles === null) throw new Error("Failed to load dungeon tiles");
+        if (dungeonTiles === null)
+            throw new Error("Failed to load dungeon tiles");
 
         // Init ground
-        const groundLayer = this.tilemap.createBlankLayer("Ground", dungeonTiles, 0, 0)
-            ?.randomize(0, 0, this.width, this.height, Graphics.environment.indices.floor.outerCorridor);
+        const groundLayer = this.tilemap
+            .createBlankLayer("Ground", dungeonTiles, 0, 0)
+            ?.randomize(
+                0,
+                0,
+                this.width,
+                this.height,
+                Graphics.environment.indices.floor.outerCorridor
+            );
         if (!groundLayer) throw new Error("Failed to init ground layer");
         this.groundLayer = groundLayer;
         this.groundLayer.setDepth(1);
@@ -97,15 +110,21 @@ export default class Map {
             //     room.height + 2,
             //     Graphics.environment.indices.floor.outer
             // );
-      
+
             if (room.height < 4 || room.width < 4) {
                 continue;
             }
-      
+
             const numGoons = Phaser.Math.Between(1, 1);
             for (let i = 0; i < numGoons; i++) {
-                const x = Phaser.Math.Between(room.x + 1, room.x + room.width - 1);
-                const y = Phaser.Math.Between(room.y + 1, room.y + room.height - 1);
+                const x = Phaser.Math.Between(
+                    room.x + 1,
+                    room.x + room.width - 1
+                );
+                const y = Phaser.Math.Between(
+                    room.y + 1,
+                    room.y + room.height - 1
+                );
                 const newGoon = new Goon(
                     Phaser.Math.Snap.To(this.tilemap.tileToWorldX(x)!, 32),
                     Phaser.Math.Snap.To(this.tilemap.tileToWorldX(y)!, 32) + 4,
@@ -115,12 +134,22 @@ export default class Map {
                 );
                 this.goons.push(newGoon);
             }
-          }
+        }
 
         // Init walls and doors
-        const wallLayer = this.tilemap.createBlankLayer("Wall", dungeonTiles, 0, 0);
+        const wallLayer = this.tilemap.createBlankLayer(
+            "Wall",
+            dungeonTiles,
+            0,
+            0
+        );
         if (!wallLayer) throw new Error("Failed to init wall layer");
-        const doorLayer = this.tilemap.createBlankLayer("Door", dungeonTiles, 0, 0);
+        const doorLayer = this.tilemap.createBlankLayer(
+            "Door",
+            dungeonTiles,
+            0,
+            0
+        );
         if (!doorLayer) throw new Error("Failed to init door layer");
 
         for (let x = 0; x < width; x++) {
@@ -137,18 +166,24 @@ export default class Map {
         wallLayer.setCollisionBetween(0, 0x7f);
         const collidableDoors = [
             Graphics.environment.indices.doors.horizontal,
-            Graphics.environment.indices.doors.vertical
+            Graphics.environment.indices.doors.vertical,
         ];
         doorLayer.setCollision(collidableDoors);
 
         doorLayer.setTileIndexCallback(
             collidableDoors,
             (_: unknown, tile: Phaser.Tilemaps.Tile) => {
-                this.doorLayer.putTileAt(
-                    Graphics.environment.indices.doors.destroyed,
-                    tile.x,
-                    tile.y
-                );
+                const data = this.tiles[tile.y][tile.x];
+                const horiz =
+                    data.spriteIndex() ===
+                    Graphics.environment.indices.doors.horizontal;
+                if (horiz) {
+                    this.doorLayer.putTileAt(
+                        Graphics.environment.indices.doors.destroyed,
+                        tile.x,
+                        tile.y
+                    );
+                }
                 // this.tileAt(tile.x, tile.y)!.open();
                 scene.fov!.recalculate();
             },
@@ -156,7 +191,7 @@ export default class Map {
         );
         this.doorLayer = doorLayer;
         doorLayer.setDepth(3);
-      
+
         this.wallLayer = wallLayer;
         this.wallLayer.setDepth(2);
     }
@@ -170,10 +205,13 @@ export default class Map {
 
     public withinRoom(x: number, y: number): boolean {
         return (
-            this.rooms.find(r => {
+            this.rooms.find((r) => {
                 const { top, left, right, bottom } = r.getBoundingBox();
                 return (
-                    y >= top - 1 && y <= bottom + 1 && x >= left - 1 && x <= right + 1
+                    y >= top - 1 &&
+                    y <= bottom + 1 &&
+                    x >= left - 1 &&
+                    x <= right + 1
                 );
             }) !== undefined
         );
@@ -181,11 +219,17 @@ export default class Map {
 
     public moveEnemies(player: Player) {
         for (const goon of this.goons) {
-            let tile: Tile | null = this.tileAt(goon.x + (goon.movingRight ? 1 : -1), goon.y);
+            let tile: Tile | null = this.tileAt(
+                goon.x + (goon.movingRight ? 1 : -1),
+                goon.y
+            );
             if (tile) {
                 if (tile.collides) {
                     goon.movingRight = !goon.movingRight;
-                    tile = this.tileAt(goon.x + (goon.movingRight ? 1 : -1), goon.y);
+                    tile = this.tileAt(
+                        goon.x + (goon.movingRight ? 1 : -1),
+                        goon.y
+                    );
                 }
                 if (tile) {
                     if (tile.x === player.x && tile.y === player.y) {

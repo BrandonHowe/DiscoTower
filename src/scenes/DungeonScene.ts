@@ -1,4 +1,4 @@
-import LifeWillChange from "url:../assets/LifeWillChange.mp3";
+import LifeWillChange from "../assets/LifeWillChange.mp3";
 import FOVLayer from "../entities/FOV";
 import Goon from "../entities/Goon";
 import * as Graphics from "../entities/Graphics";
@@ -33,11 +33,11 @@ export class DungeonScene extends Phaser.Scene {
         this.load.image(Graphics.util.name, Graphics.util.file);
         this.load.spritesheet(Graphics.player.name, Graphics.player.file, {
             frameHeight: Graphics.player.height,
-            frameWidth: Graphics.player.width
+            frameWidth: Graphics.player.width,
         });
         this.load.spritesheet(Graphics.goon.name, Graphics.goon.file, {
             frameHeight: Graphics.goon.height,
-            frameWidth: Graphics.goon.width
+            frameWidth: Graphics.goon.width,
         });
         this.load.audio("LifeWillChange", LifeWillChange);
     }
@@ -45,28 +45,28 @@ export class DungeonScene extends Phaser.Scene {
     create(): void {
         const music = this.sound.add("LifeWillChange");
         music.play({
-            loop: true // Set to true to loop the music
+            loop: true, // Set to true to loop the music
         });
 
-        Object.values(Graphics.player.animations).forEach(anim => {
+        Object.values(Graphics.player.animations).forEach((anim) => {
             if (!this.anims.get(anim.key)) {
                 this.anims.create({
                     ...anim,
                     frames: this.anims.generateFrameNumbers(
                         Graphics.player.name,
                         anim.frames
-                    )
+                    ),
                 });
             }
         });
-        Object.values(Graphics.goon.animations).forEach(anim => {
+        Object.values(Graphics.goon.animations).forEach((anim) => {
             if (!this.anims.get(anim.key)) {
                 this.anims.create({
                     ...anim,
                     frames: this.anims.generateFrameNumbers(
                         Graphics.goon.name,
                         anim.frames
-                    )
+                    ),
                 });
             }
         });
@@ -87,17 +87,21 @@ export class DungeonScene extends Phaser.Scene {
         );
 
         this.player = new Player(
-            Phaser.Math.Snap.To(this.tilemap.tileToWorldX(map.startingX)!, 32) + 16,
-            Phaser.Math.Snap.To(this.tilemap.tileToWorldY(map.startingY)!, 32) - 4,
+            Phaser.Math.Snap.To(this.tilemap.tileToWorldX(map.startingX)!, 32) +
+                16,
+            Phaser.Math.Snap.To(this.tilemap.tileToWorldY(map.startingY)!, 32) -
+                4,
             map.startingX,
             map.startingY,
             this
         );
-        
+
         this.cameras.main.startFollow(this.player.sprite);
 
         this.goons = this.map.goons;
-        this.goonGroup = this.physics.add.group(this.goons.map(s => s.sprite));
+        this.goonGroup = this.physics.add.group(
+            this.goons.map((s) => s.sprite)
+        );
 
         this.input.keyboard!.on("keydown-F", () => {
             this.fov!.layer.setVisible(!this.fov!.layer.visible);
@@ -129,10 +133,14 @@ export class DungeonScene extends Phaser.Scene {
         this.tryHeartbeat(time);
 
         const player = new Phaser.Math.Vector2({
-            x: this.tilemap!.worldToTileX(this.player!.sprite.body!.x) as number,
-            y: this.tilemap!.worldToTileY(this.player!.sprite.body!.y) as number
+            x: this.tilemap!.worldToTileX(
+                this.player!.sprite.body!.x
+            ) as number,
+            y: this.tilemap!.worldToTileY(
+                this.player!.sprite.body!.y
+            ) as number,
         });
-  
+
         const bounds = new Phaser.Geom.Rectangle(
             this.tilemap!.worldToTileX(camera.worldView.x)! - 1,
             this.tilemap!.worldToTileY(camera.worldView.y)! - 1,
@@ -146,12 +154,12 @@ export class DungeonScene extends Phaser.Scene {
         for (let i = 0; i < this.leftLines.length; i++) {
             const left = this.leftLines[i];
             const right = this.rightLines[i];
-            const dist = (timeToNextHeartbeat / 5) + (this.msPerBeat * i / 5);
-            left.x = (window.innerWidth / 2) - dist;
-            right.x = (window.innerWidth / 2) + dist;
+            const dist = timeToNextHeartbeat / 5 + (this.msPerBeat * i) / 5;
+            left.x = window.innerWidth / 2 - dist;
+            right.x = window.innerWidth / 2 + dist;
         }
     }
-    
+
     private nextHeartbeat = 0;
     public tryHeartbeat(time: number) {
         if (!this.player) return;
@@ -169,28 +177,40 @@ export class DungeonScene extends Phaser.Scene {
             switch (this.player?.queuedDirection) {
                 case Direction.Left: {
                     enemy = this.map?.enemyAt(this.player.x - 1, this.player.y);
-                    if (enemy) { queueAttack = true; break; }
+                    if (enemy) {
+                        queueAttack = true;
+                        break;
+                    }
                     queueMove = true;
                     tile = this.map?.tileAt(this.player.x - 1, this.player.y);
                     break;
                 }
                 case Direction.Right: {
                     enemy = this.map?.enemyAt(this.player.x + 1, this.player.y);
-                    if (enemy) { queueAttack = true; break; }
+                    if (enemy) {
+                        queueAttack = true;
+                        break;
+                    }
                     queueMove = true;
                     tile = this.map?.tileAt(this.player.x + 1, this.player.y);
                     break;
                 }
                 case Direction.Up: {
                     enemy = this.map?.enemyAt(this.player.x, this.player.y - 1);
-                    if (enemy) { queueAttack = true; break; }
+                    if (enemy) {
+                        queueAttack = true;
+                        break;
+                    }
                     queueMove = true;
                     tile = this.map?.tileAt(this.player.x, this.player.y - 1);
                     break;
                 }
                 case Direction.Down: {
                     enemy = this.map?.enemyAt(this.player.x, this.player.y + 1);
-                    if (enemy) { queueAttack = true; break; }
+                    if (enemy) {
+                        queueAttack = true;
+                        break;
+                    }
                     queueMove = true;
                     tile = this.map?.tileAt(this.player.x, this.player.y + 1);
                     break;
@@ -222,10 +242,18 @@ export class DungeonScene extends Phaser.Scene {
             }
             if (queueMove) {
                 this.player.queuedDirection = Direction.None;
-                this.player.body.x = this.tilemap!.tileToWorldX(this.player.x)!;
-                this.player.body.y = this.tilemap!.tileToWorldY(this.player.y)!;
-                this.player.body.x = Phaser.Math.Snap.To(this.player.body.x, 32);
-                this.player.body.y = Phaser.Math.Snap.To(this.player.body.y, 32);
+                this.player.sprite.x = this.tilemap!.tileToWorldX(
+                    this.player.x
+                )!;
+                this.player.sprite.y = this.tilemap!.tileToWorldY(
+                    this.player.y
+                )!;
+                this.player.sprite.x =
+                    Phaser.Math.Snap.To(this.player.sprite.x, 32) + 16;
+                this.player.sprite.y = Phaser.Math.Snap.To(
+                    this.player.sprite.y,
+                    32
+                );
             }
 
             this.map?.moveEnemies(this.player);
@@ -236,10 +264,10 @@ export class DungeonScene extends Phaser.Scene {
         line.setDepth(1000);
         // Clear the previous line drawing
         line.clear();
-      
+
         // Set line style (color: white, thickness: 5)
         line.lineStyle(5, 0x00ffff);
-      
+
         // Draw a vertical line from the top to the bottom of the screen
         line.beginPath();
         line.moveTo(0, window.innerHeight - 100);

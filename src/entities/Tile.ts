@@ -4,7 +4,7 @@ import Map from "./Map";
 export enum TileType {
     None,
     Wall,
-    Door
+    Door,
 }
 
 export default class Tile {
@@ -53,18 +53,20 @@ export default class Tile {
             nw: this.map.tileAt(this.x - 1, this.y - 1),
             ne: this.map.tileAt(this.x + 1, this.y - 1),
             sw: this.map.tileAt(this.x - 1, this.y + 1),
-            se: this.map.tileAt(this.x + 1, this.y + 1)
+            se: this.map.tileAt(this.x + 1, this.y + 1),
         };
     }
 
     public isEnclosed(): boolean {
         return (
             Object.values(this.neighbours()).filter(
-                t => !t || (t.type === TileType.Wall && t.corridor === this.corridor)
+                (t) =>
+                    !t ||
+                    (t.type === TileType.Wall && t.corridor === this.corridor)
             ).length === 8
         );
     }
-    
+
     public spriteIndex(): number {
         const modifier = 0;
         // const modifier = this.type === TileType.Wall && this.corridor ? 8 : 0;
@@ -75,13 +77,10 @@ export default class Tile {
     private rawIndex(): number {
         const neighbours = this.neighbours();
 
-        const n = neighbours.n && neighbours.n.type === TileType.Wall && neighbours.n.corridor === this.corridor;
-        const s = neighbours.s && neighbours.s.type === TileType.Wall && neighbours.s.corridor === this.corridor
-        const w = neighbours.w && neighbours.w.type === TileType.Wall && neighbours.w.corridor === this.corridor
-        const e = neighbours.e && neighbours.e.type === TileType.Wall && neighbours.e.corridor === this.corridor
-
-        const wDoor = neighbours.w && neighbours.w.type === TileType.Door;
-        const eDoor = neighbours.e && neighbours.e.type === TileType.Door;
+        const n = neighbours.n && neighbours.n.type !== TileType.None;
+        const s = neighbours.s && neighbours.s.type !== TileType.None;
+        const w = neighbours.w && neighbours.w.type !== TileType.None;
+        const e = neighbours.e && neighbours.e.type !== TileType.None;
 
         const i = Graphics.environment.indices.walls;
 
@@ -98,9 +97,6 @@ export default class Tile {
             if (n && s) { return i.intersections.n_s; }
             if (n && e) { return i.intersections.n_e; }
             if (n && w) { return i.intersections.n_w; }
-
-            if (w && eDoor) { return i.intersections.e_door; }
-            if (e && wDoor) { return i.intersections.w_door; }
 
             if (n) { return i.intersections.n; }
             if (s) { return i.intersections.s; }

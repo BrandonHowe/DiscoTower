@@ -13,7 +13,13 @@ export default class Goon implements Enemy {
 
     public movingRight: boolean = Math.random() > 0.5;
 
-    constructor(x: number, y: number, worldX: number, worldY: number, scene: Phaser.Scene) {
+    constructor(
+        x: number,
+        y: number,
+        worldX: number,
+        worldY: number,
+        scene: Phaser.Scene
+    ) {
         this.x = worldX;
         this.y = worldY;
 
@@ -25,8 +31,8 @@ export default class Goon implements Enemy {
         this.sprite.setDepth(10);
 
         this.body = <Phaser.Physics.Arcade.Body>this.sprite.body;
-        this.body.x = x;
-        this.body.y = y;
+        this.sprite.x = x;
+        this.sprite.y = y;
         this.body.bounce.set(0, 0);
         this.body.setImmovable(true);
     }
@@ -34,10 +40,10 @@ export default class Goon implements Enemy {
     public updateXY(tilemap: Phaser.Tilemaps.Tilemap, x: number, y: number) {
         this.x = x;
         this.y = y;
-        this.body.x = tilemap.tileToWorldX(x)!;
-        this.body.y = tilemap.tileToWorldY(y)!;
-        this.body.x = Phaser.Math.Snap.To(this.body.x, 32);
-        this.body.y = Phaser.Math.Snap.To(this.body.y, 32);
+        this.sprite.x = tilemap.tileToWorldX(x)!;
+        this.sprite.y = tilemap.tileToWorldY(y)!;
+        this.sprite.x = Phaser.Math.Snap.To(this.sprite.x, 32) + 16;
+        this.sprite.y = Phaser.Math.Snap.To(this.sprite.y, 32);
     }
 
     public attack(damage: number) {
