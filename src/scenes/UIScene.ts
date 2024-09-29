@@ -10,6 +10,7 @@ export default class UIScene extends Phaser.Scene {
     private hearts: Phaser.GameObjects.Sprite[] = [];
     private weapon: Phaser.GameObjects.Sprite | null = null;
     private armor: Phaser.GameObjects.Sprite | null = null;
+    private combo: Phaser.GameObjects.Sprite | null = null;
     private weaponText: Phaser.GameObjects.Text | null = null;
     private armorText: Phaser.GameObjects.Text | null = null;
     private scrapText: Phaser.GameObjects.Text | null = null;
@@ -111,10 +112,11 @@ export default class UIScene extends Phaser.Scene {
                 this.cameras.main.width - 150,
                 175,
                 Graphics.hearts.name,
-                Graphics.hearts.indices.combo
+                Graphics.hearts.indices.combo1
             )
             .setScrollFactor(0);
         combo.scale = 3;
+        this.combo = combo;
         this.add.text(this.cameras.main.width - 105, 150, `COMBO:`, {
             fontSize: 24,
         });
@@ -132,6 +134,7 @@ export default class UIScene extends Phaser.Scene {
         if (this.hearts.length) {
             for (let i = 0; i < this.player.maxHealth; i++) {
                 const full = this.player.health >= i + 1;
+                this.hearts[i]?.anims?.stop();
                 this.hearts[i].setFrame(
                     Graphics.hearts.indices[full ? "full" : "empty"]
                 );
@@ -146,7 +149,9 @@ export default class UIScene extends Phaser.Scene {
         }
 
         if (this.weaponText) {
-            this.weaponText.setText(`Weapon - ${this.player.equippedWeapon.attack} ATK`);
+            this.weaponText.setText(
+                `Weapon - ${this.player.equippedWeapon.attack} ATK`
+            );
         }
 
         if (this.armor) {
@@ -156,7 +161,15 @@ export default class UIScene extends Phaser.Scene {
         }
 
         if (this.armorText) {
-            this.armorText.setText(`Armor - ${this.player.equippedArmor.defense} ATK`);
+            this.armorText.setText(
+                `Armor - ${this.player.equippedArmor.defense} ATK`
+            );
+        }
+
+        if (this.combo) {
+            const comboLevel =
+                this.player.combo >= 30 ? 3 : this.player.combo >= 15 ? 2 : 1;
+            this.combo.setFrame(Graphics.hearts.indices[`combo${comboLevel}`]);
         }
 
         if (this.scrapText) {

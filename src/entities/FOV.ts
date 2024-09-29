@@ -15,7 +15,8 @@ const alphaPerMs = 0.004;
 const updateTileAlpha = (
     desiredAlpha: number,
     delta: number,
-    tile: Phaser.Tilemaps.Tile
+    tile: Phaser.Tilemaps.Tile,
+    beneathTile: Phaser.Tilemaps.Tile[]
 ) => {
     // Update faster the further away we are from the desired value,
     // but restrict the lower bound so we don't get it slowing
@@ -23,11 +24,26 @@ const updateTileAlpha = (
     const distance = Math.max(Math.abs(tile.alpha - desiredAlpha), 0.05);
     const updateFactor = alphaPerMs * delta * distance;
     if (tile.alpha > desiredAlpha) {
-        tile.setAlpha(Phaser.Math.MinSub(tile.alpha, updateFactor, desiredAlpha));
+        tile.setAlpha(
+            Phaser.Math.MinSub(tile.alpha, updateFactor, desiredAlpha)
+        );
     } else if (tile.alpha < desiredAlpha) {
-        tile.setAlpha(Phaser.Math.MaxAdd(tile.alpha, updateFactor, desiredAlpha));
+        tile.setAlpha(
+            Phaser.Math.MaxAdd(tile.alpha, updateFactor, desiredAlpha)
+        );
     }
-}
+    if (tile.alpha === 1) {
+        tile.visible = false;
+        for (const tile of beneathTile) {
+            if (tile) tile.visible = false;
+        }
+    } else {
+        tile.visible = true;
+        for (const tile of beneathTile) {
+            if (tile) tile.visible = false;
+        }
+    }
+};
 
 export default class FOVLayer {
     public layer: Phaser.Tilemaps.TilemapLayer;
@@ -39,7 +55,8 @@ export default class FOVLayer {
         const utilTiles = map.tilemap.addTilesetImage("util");
         if (utilTiles === null) throw new Error("utilTiles is null");
 
-        const layer = map.tilemap.createBlankLayer("Dark", utilTiles, 0, 0)
+        const layer = map.tilemap
+            .createBlankLayer("Dark", utilTiles, 0, 0)
             ?.fill(Graphics.util.indices.black);
         if (!layer) throw new Error("fov layer is null");
         this.layer = layer;
@@ -73,17 +90,27 @@ export default class FOVLayer {
 
         for (let y = bounds.y; y < bounds.y + bounds.height; y++) {
             for (let x = bounds.x; x < bounds.x + bounds.width; x++) {
-                if (y < 0 || y >= this.map.height || x < 0 || x >= this.map.width) {
+                if (
+                    y < 0 ||
+                    y >= this.map.height ||
+                    x < 0 ||
+                    x >= this.map.width
+                ) {
                     continue;
                 }
                 const desiredAlpha = this.map.tiles[y][x].desiredAlpha;
                 const tile = this.layer.getTileAt(x, y);
-                updateTileAlpha(desiredAlpha, delta, tile);
+                const beneathTile = [
+                    this.map.groundLayer.getTileAt(x, y),
+                    this.map.wallLayer.getTileAt(x, y),
+                    this.map.doorLayer.getTileAt(x, y),
+                ];
+                updateTileAlpha(desiredAlpha, delta, tile, beneathTile);
             }
         }
     }
 
-  updateMRPAS(pos: Phaser.Math.Vector2) {
+    updateMRPAS(pos: Phaser.Math.Vector2) {
         // TODO: performance?
         for (let row of this.map.tiles) {
             for (let tile of row) {
@@ -100,17 +127,19 @@ export default class FOVLayer {
             (x: number, y: number) => this.map.tiles[y][x].seen,
             (x: number, y: number) => {
                 const distance = Math.floor(
-                new Phaser.Math.Vector2(x, y).distance(
-                    new Phaser.Math.Vector2(pos.x, pos.y)
-                )
+                    new Phaser.Math.Vector2(x, y).distance(
+                        new Phaser.Math.Vector2(pos.x, pos.y)
+                    )
                 );
 
                 const rolloffIdx = distance <= radius ? radius - distance : 0;
                 const alpha =
-                rolloffIdx < lightDropoff.length ? lightDropoff[rolloffIdx] : 0;
+                    rolloffIdx < lightDropoff.length
+                        ? lightDropoff[rolloffIdx]
+                        : 0;
                 this.map.tiles[y][x].desiredAlpha = alpha;
                 this.map.tiles[y][x].seen = true;
             }
         );
-  }
+    }
 }

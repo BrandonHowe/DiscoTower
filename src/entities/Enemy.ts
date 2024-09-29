@@ -77,7 +77,12 @@ export default class Enemy {
         this.key = preset.key;
         this.deathKey = preset.deathKey;
 
-        this.sprite = scene.add.sprite(0, 0, Graphics.enemy.name, 0);
+        this.sprite = scene.add.sprite(
+            0,
+            preset.key === "droneIdle" ? 10 : 0,
+            Graphics.enemy.name,
+            0
+        );
         this.sprite.setSize(8, 8);
         this.sprite.setScale(2);
         this.sprite.anims.play(Graphics.enemy.animations[preset.key].key);
@@ -90,7 +95,7 @@ export default class Enemy {
             const full = this.health >= i + 1;
             const heart = scene.add.sprite(
                 (this.maxHealth - 1) * -7.5 + i * 15,
-                -20,
+                preset.key === "droneIdle" ? -10 : -20,
                 Graphics.hearts.name,
                 Graphics.hearts.indices[full ? "full" : "empty"]
             );
@@ -131,7 +136,10 @@ export default class Enemy {
         ];
     }
 
-    public attack(tilemap: Phaser.Tilemaps.Tilemap, damage: number): { killed: boolean, tweens: Phaser.Types.Tweens.TweenBuilderConfig[] } {
+    public attack(
+        tilemap: Phaser.Tilemaps.Tilemap,
+        damage: number
+    ): { killed: boolean; tweens: Phaser.Types.Tweens.TweenBuilderConfig[] } {
         this.health -= damage;
         for (let i = 0; i < this.maxHealth; i++) {
             const full = this.health >= i + 1;
@@ -144,15 +152,16 @@ export default class Enemy {
             heart.visible = true;
         }
         const tweens: Phaser.Types.Tweens.TweenBuilderConfig[] = [];
-        const originalX = Phaser.Math.Snap.To(tilemap.tileToWorldX(this.x)!, 32) + 16;
+        const originalX =
+            Phaser.Math.Snap.To(tilemap.tileToWorldX(this.x)!, 32) + 16;
         for (let i = 0; i < 5; i++) {
-            const offset = (i % 2 === 0) ? 10 : -10;
+            const offset = i % 2 === 0 ? 10 : -10;
             tweens.push({
                 targets: [this.container],
                 x: originalX + offset,
                 y: this.container.y,
                 duration: 40,
-                delay: i * 40
+                delay: i * 40,
             });
         }
         tweens.push({
@@ -160,7 +169,7 @@ export default class Enemy {
             x: originalX,
             y: this.container.y,
             duration: 20,
-            delay: 200
+            delay: 200,
         });
         if (this.health <= 0) {
             this.kill();

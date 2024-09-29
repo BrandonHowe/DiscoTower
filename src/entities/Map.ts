@@ -3,7 +3,7 @@ import * as Graphics from "./Graphics";
 import Tile, { TileType } from "./Tile";
 import { DungeonScene } from "../scenes/DungeonScene";
 import Player from "./Player";
-import Item, { Armors, ItemData, Weapons } from "./Items";
+import Item, { Armors, Heals, ItemData, Weapons } from "./Items";
 import Portal from "./Portal";
 import Enemy, { Boss, Chaser, Drone, Goon, Sentinel } from "./Enemy";
 
@@ -25,6 +25,7 @@ export default class Map {
     public groundLayer!: Phaser.Tilemaps.TilemapLayer;
     public wallLayer!: Phaser.Tilemaps.TilemapLayer;
     public doorLayer!: Phaser.Tilemaps.TilemapLayer;
+    public entityLayer!: Phaser.Tilemaps.TilemapLayer;
 
     public rooms!: Dungeoneer.Room[];
 
@@ -76,6 +77,7 @@ export default class Map {
                 height: height - 2,
             });
         }
+        console.log("Generated seed", dungeon.seed);
         this.rooms = dungeon.rooms;
         for (const room of this.rooms) {
             room.x++;
@@ -167,6 +169,9 @@ export default class Map {
         );
         this.groundLayer.setDepth(2);
 
+        let entityLayer: Phaser.Tilemaps.TilemapLayer | null | undefined =
+            this.tilemap.getLayer("Entity")?.tilemapLayer;
+
         for (const enemy of this.enemies) {
             enemy.destroy();
         }
@@ -180,7 +185,10 @@ export default class Map {
                 continue;
             }
 
-            const numDrones = Phaser.Math.Between(Math.floor(roomSize / 20), level + 2 + Math.floor(roomSize / 20));
+            const numDrones = Phaser.Math.Between(
+                Math.floor(roomSize / 20),
+                level + 2 + Math.floor(roomSize / 20)
+            );
             for (let i = 0; i < numDrones; i++) {
                 const x = Phaser.Math.Between(
                     room.x + 1,
@@ -270,6 +278,22 @@ export default class Map {
         this.items = [];
         this.createItem(Weapons.dagger, startingRoomNum);
         if (level >= 1) this.createItem(Armors.tunic, startingRoomNum);
+        for (let i = 0; i < dungeon.rooms.length; i++) {
+            if (i === startingRoomNum) continue;
+            const room = dungeon.rooms[i];
+            const x = Phaser.Math.Between(room.x + 1, room.x + room.width - 1);
+            const y = Phaser.Math.Between(room.y + 1, room.y + room.height - 1);
+            const newItem = new Item(
+                Phaser.Math.Snap.To(this.tilemap.tileToWorldX(x)!, 32),
+                Phaser.Math.Snap.To(this.tilemap.tileToWorldX(y)!, 32),
+                x,
+                y,
+                Heals.single,
+                this.scene
+            );
+            newItem.sprite.depth = 4;
+            this.items.push(newItem);
+        }
 
         // Init walls and doors
         let wallLayer = this.tilemap.getLayer("Wall")?.tilemapLayer;
@@ -311,32 +335,6 @@ export default class Map {
                 }
             }
         }
-
-        const collidableDoors = [
-            Graphics.environment.indices.doors.horizontal,
-            Graphics.environment.indices.doors.vertical,
-        ];
-        doorLayer.setCollision(collidableDoors);
-
-        doorLayer.setTileIndexCallback(
-            collidableDoors,
-            (_: unknown, tile: Phaser.Tilemaps.Tile) => {
-                const data = this.tiles[tile.y][tile.x];
-                const horiz =
-                    data.spriteIndex() ===
-                    Graphics.environment.indices.doors.horizontal;
-                if (horiz) {
-                    this.doorLayer.putTileAt(
-                        Graphics.environment.indices.doors.destroyed,
-                        tile.x,
-                        tile.y
-                    );
-                }
-                // this.tileAt(tile.x, tile.y)!.open();
-                this.scene.fov!.recalculate();
-            },
-            this
-        );
         this.doorLayer = doorLayer;
         doorLayer.setDepth(3);
 
@@ -467,6 +465,7 @@ export default class Map {
             item,
             this.scene
         );
+        newItem.sprite.depth = 4;
         this.items.push(newItem);
     }
 
@@ -480,6 +479,7 @@ export default class Map {
             this.scene
         );
         this.items.push(newItem);
+        newItem.sprite.depth = 4;
         return newItem;
     }
 
@@ -583,8 +583,12 @@ export default class Map {
             let tweens: Phaser.Types.Tweens.TweenBuilderConfig[] = [];
             if (tile.x === player.x && tile.y === player.y && !tookDamage) {
                 console.log(enemy.x, enemy.y, tile.x, tile.y, tookDamage);
-                tweens = player.takeDamage(this.tilemap!, enemy.attackStrength - player.equippedArmor.defense);
+                tweens = player.takeDamage(
+                    this.tilemap!,
+                    enemy.attackStrength - player.equippedArmor.defense
+                );
                 tookDamage = true;
+                this.scene.oof?.play();
             }
             if (enemy.key !== "chaserIdle" || !tookDamage) {
                 tweens.push(...enemy.updateXY(this.tilemap, tile.x, tile.y));
@@ -626,7 +630,7 @@ export default class Map {
         this.tintingEven = !this.tintingEven;
 
         const presets = [
-            [0xFF6EC7, 0x00cccc],
+            [0xff6ec7, 0x00cccc],
             [0x0000ff, 0xffd700],
             [0xffc0cb, 0x00ff00],
         ];
@@ -635,7 +639,6 @@ export default class Map {
             presets[level % presets.length][Number(this.tintingEven)];
         const altTint =
             presets[level % presets.length][Number(!this.tintingEven)];
-    
 
         this.groundLayer.setTint(currentTint);
         this.wallLayer.setTint(altTint);

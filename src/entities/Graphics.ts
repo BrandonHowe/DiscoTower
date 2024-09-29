@@ -95,7 +95,7 @@ export const player: AnimSet = {
         playerAttack: {
             key: "playerAttack",
             frames: { start: 40, end: 43 },
-            frameRate: 16
+            frameRate: 16,
         },
         playerDamaged: {
             key: "playerDamaged",
@@ -106,7 +106,7 @@ export const player: AnimSet = {
             key: "playerDeath",
             frames: { start: 50, end: 56 },
             frameRate: 16,
-        }
+        },
     },
 };
 
@@ -211,7 +211,9 @@ export const hearts = {
         full: 0x00,
         empty: 0x01,
         scrap: 0x02,
-        combo: 0x03,
+        combo1: 0x03,
+        combo2: 0x04,
+        combo3: 0x05,
     },
 };
 
@@ -225,6 +227,7 @@ export const items = {
     indices: {
         fist: 0x00,
         dagger: 0x01,
+        singleHeal: 0x02,
         nothing: 0x10,
         tunic: 0x11,
         scrap: 0x20,

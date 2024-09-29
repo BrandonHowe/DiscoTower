@@ -1,4 +1,9 @@
 import LifeWillChange from "url:../assets/LifeWillChange.mp3";
+import Oof from "url:../assets/oof.mp3";
+import Clang from "url:../assets/clang.mp3";
+import PowerUp from "url:../assets/powerup.mp3";
+import PowerDown from "url:../assets/powerdown.mp3";
+import Heal from "url:../assets/heal.mp3";
 import Enemy from "../entities/Enemy";
 import FOVLayer from "../entities/FOV";
 import * as Graphics from "../entities/Graphics";
@@ -10,6 +15,11 @@ import Tile, { TileType } from "../entities/Tile";
 const worldTileHeight = 20;
 const worldTileWidth = 20;
 
+type PhaserSound =
+    | Phaser.Sound.NoAudioSound
+    | Phaser.Sound.HTML5AudioSound
+    | Phaser.Sound.WebAudioSound;
+
 export class DungeonScene extends Phaser.Scene {
     private map: Map | null = null;
     private tilemap: Phaser.Tilemaps.Tilemap | null = null;
@@ -20,6 +30,12 @@ export class DungeonScene extends Phaser.Scene {
 
     private leftLines: Phaser.GameObjects.Graphics[] = [];
     private rightLines: Phaser.GameObjects.Graphics[] = [];
+
+    public clang: PhaserSound | null = null;
+    public oof: PhaserSound | null = null;
+    public powerUp: PhaserSound | null = null;
+    public powerDown: PhaserSound | null = null;
+    public heal: PhaserSound | null = null;
 
     private bpm = 128;
     private msPerBeat = 60000 / this.bpm;
@@ -37,6 +53,11 @@ export class DungeonScene extends Phaser.Scene {
 
     preload(): void {
         this.load.audio("LifeWillChange", LifeWillChange);
+        this.load.audio("Clang", Clang);
+        this.load.audio("Oof", Oof);
+        this.load.audio("PowerUp", PowerUp);
+        this.load.audio("PowerDown", PowerDown);
+        this.load.audio("Heal", Heal);
         this.load.image(Graphics.environment.name, Graphics.environment.file);
         this.load.image(Graphics.util.name, Graphics.util.file);
         this.load.spritesheet(Graphics.hearts.name, Graphics.hearts.file, {
@@ -67,6 +88,11 @@ export class DungeonScene extends Phaser.Scene {
 
     create(): void {
         const music = this.sound.add("LifeWillChange");
+        this.clang = this.sound.add("Clang");
+        this.oof = this.sound.add("Oof");
+        this.powerUp = this.sound.add("PowerUp");
+        this.powerDown = this.sound.add("PowerDown");
+        this.heal = this.sound.add("Heal");
         music.play({
             loop: true, // Set to true to loop the music
         });
@@ -124,6 +150,10 @@ export class DungeonScene extends Phaser.Scene {
             this.fov!.layer.setVisible(!this.fov!.layer.visible);
         });
 
+        for (const line of this.leftLines) line.destroy();
+        for (const line of this.rightLines) line.destroy();
+        this.leftLines = [];
+        this.rightLines = [];
         // Create multiple graphics objects for vertical lines spaced 50 pixels apart
         for (let i = window.innerWidth - 100; i > 0; i -= 100) {
             const leftLine = this.add.graphics();
@@ -153,9 +183,10 @@ export class DungeonScene extends Phaser.Scene {
             x: this.tilemap!.worldToTileX(
                 this.player!.sprite.body!.x
             ) as number,
-            y: this.tilemap!.worldToTileY(
-                this.player!.sprite.body!.y
-            ) as number + 1,
+            y:
+                (this.tilemap!.worldToTileY(
+                    this.player!.sprite.body!.y
+                ) as number) + 1,
         });
 
         const bounds = new Phaser.Geom.Rectangle(
@@ -174,6 +205,8 @@ export class DungeonScene extends Phaser.Scene {
             const dist = timeToNextHeartbeat / 5 + (this.msPerBeat * i) / 5;
             left.x = window.innerWidth / 2 - dist;
             right.x = window.innerWidth / 2 + dist;
+            this.drawLine(left);
+            this.drawLine(right);
         }
     }
 
@@ -213,7 +246,13 @@ export class DungeonScene extends Phaser.Scene {
 
             if (this.player.queuedDirection !== Direction.None) {
                 this.player.combo++;
+                if (this.player.combo === 15 || this.player.combo === 30) {
+                    this.powerUp?.play();
+                }
             } else {
+                if (this.player.combo > 15) {
+                    this.powerDown?.play();
+                }
                 this.player.combo = 0;
             }
 
@@ -263,11 +302,16 @@ export class DungeonScene extends Phaser.Scene {
                 let move = true;
                 if (tile?.collides) {
                     if (tile.type == TileType.Door) {
-                        this.map?.doorLayer.putTileAt(
-                            Graphics.environment.indices.doors.destroyed,
-                            tile.x,
-                            tile.y
-                        );
+                        const horiz =
+                            tile.spriteIndex() ===
+                            Graphics.environment.indices.doors.horizontal;
+                        if (horiz) {
+                            this.map?.doorLayer.putTileAt(
+                                Graphics.environment.indices.doors.destroyed,
+                                tile.x,
+                                tile.y
+                            );
+                        }
                         this.map!.tileAt(tile.x, tile.y)!.open();
                         this.fov!.recalculate();
                     } else {
@@ -280,10 +324,20 @@ export class DungeonScene extends Phaser.Scene {
                 }
             }
             if (queueAttack && enemy) {
-                const res = enemy.attack(this.tilemap!, this.player.equippedWeapon.attack);
+                const res = enemy.attack(
+                    this.tilemap!,
+                    this.player.equippedWeapon.attack
+                );
+                this.clang?.play();
+
                 if (res.killed && this.map) {
-                    const scrap = this.map.placeItem(Currencies.scrap, enemy.x, enemy.y);
-                    (scrap.data as Currency).amount = this.player.combo > 10 ? 2 : 1;
+                    const scrap = this.map.placeItem(
+                        Currencies.scrap,
+                        enemy.x,
+                        enemy.y
+                    );
+                    (scrap.data as Currency).amount =
+                        this.player.combo > 10 ? 2 : 1;
                 }
                 for (const tween of res.tweens) {
                     this.tweens.add(tween);
@@ -323,6 +377,9 @@ export class DungeonScene extends Phaser.Scene {
                 while (item) {
                     this.map.items.splice(this.map.items.indexOf(item), 1);
                     this.player.addItem(item.data);
+                    if (item.data.key === "singleHeal") {
+                        this.heal?.play();
+                    }
                     item.destroy();
                     item = this.map.itemAt(this.player.x, this.player.y);
                 }
