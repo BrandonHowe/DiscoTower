@@ -141,6 +141,7 @@ export const items = {
         dagger: 0x01,
         nothing: 0x10,
         tunic: 0x11,
+        scrap: 0x20,
     } as Record<string, number>,
 };
 

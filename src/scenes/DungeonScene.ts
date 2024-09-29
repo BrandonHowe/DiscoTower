@@ -2,6 +2,7 @@ import LifeWillChange from "../assets/LifeWillChange.mp3";
 import FOVLayer from "../entities/FOV";
 import Goon from "../entities/Goon";
 import * as Graphics from "../entities/Graphics";
+import { Currencies } from "../entities/Items";
 import Map from "../entities/Map";
 import Player, { Direction } from "../entities/Player";
 import Tile, { TileType } from "../entities/Tile";
@@ -242,24 +243,21 @@ export class DungeonScene extends Phaser.Scene {
                     this.player.y = tile.y;
                 }
             }
-            if (queueAttack) {
-                enemy?.attack(1);
+            if (queueAttack && enemy) {
+                const killed = enemy.attack(1);
+                if (killed && this.map) {
+                    this.map.placeItem(Currencies.scrap, enemy.x, enemy.y);
+                }
                 this.player.queuedDirection = Direction.None;
             }
             if (queueMove) {
                 this.player.queuedDirection = Direction.None;
-                this.player.sprite.x = this.tilemap!.tileToWorldX(
-                    this.player.x
-                )!;
-                this.player.sprite.y = this.tilemap!.tileToWorldY(
+                const tweens = this.player.updateXY(
+                    this.tilemap!,
+                    this.player.x,
                     this.player.y
-                )!;
-                this.player.sprite.x =
-                    Phaser.Math.Snap.To(this.player.sprite.x, 32) + 16;
-                this.player.sprite.y = Phaser.Math.Snap.To(
-                    this.player.sprite.y,
-                    32
                 );
+                for (const tween of tweens) this.tweens.add(tween);
 
                 const item = this.map?.itemAt(this.player.x, this.player.y);
                 if (item && this.map) {

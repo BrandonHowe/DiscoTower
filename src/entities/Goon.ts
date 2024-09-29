@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import Phaser, { Types } from "phaser";
 import * as Graphics from "./Graphics";
 import { Enemy } from "./Enemy";
 
@@ -29,20 +29,43 @@ export default class Goon implements Enemy {
         this.sprite.setDepth(10);
     }
 
-    public updateXY(tilemap: Phaser.Tilemaps.Tilemap, x: number, y: number) {
+    public updateXY(
+        tilemap: Phaser.Tilemaps.Tilemap,
+        x: number,
+        y: number
+    ): Types.Tweens.TweenBuilderConfig[] {
         this.x = x;
         this.y = y;
-        this.sprite.x = tilemap.tileToWorldX(x)!;
-        this.sprite.y = tilemap.tileToWorldY(y)!;
-        this.sprite.x = Phaser.Math.Snap.To(this.sprite.x, 32) + 16;
-        this.sprite.y = Phaser.Math.Snap.To(this.sprite.y, 32);
+        const oldX = this.sprite.x;
+        const tempX = tilemap.tileToWorldX(x)!;
+        const tempY = tilemap.tileToWorldY(y)!;
+        const newX = Phaser.Math.Snap.To(tempX, 32) + 16;
+        const newY = Phaser.Math.Snap.To(tempY, 32);
+
+        return [
+            {
+                targets: [this.sprite],
+                x: (newX + oldX) / 2,
+                y: newY - 10,
+                duration: 75,
+            },
+            {
+                targets: [this.sprite],
+                x: newX,
+                y: newY,
+                duration: 75,
+                delay: 75,
+            },
+        ];
     }
 
-    public attack(damage: number) {
+    public attack(damage: number): boolean {
         this.health -= damage;
         if (this.health <= 0) {
             this.kill();
+            return true;
         }
+        return false;
     }
 
     kill() {

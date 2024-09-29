@@ -1,12 +1,5 @@
 import * as Graphics from "./Graphics";
-import Item, { Armor, Armors, ItemData, Weapon, Weapons } from "./Items";
-
-const speed = 125;
-const attackSpeed = 500;
-const attackDuration = 165;
-const staggerDuration = 200;
-const staggerSpeed = 100;
-const attackCooldown = attackDuration * 2;
+import { Armor, Armors, ItemData, Weapon, Weapons } from "./Items";
 
 interface Keys {
     up: Phaser.Input.Keyboard.Key;
@@ -34,26 +27,20 @@ export enum Direction {
 }
 
 export default class Player {
-    private time: number = 0;
-    private attacking: boolean = false;
     private attackUntil: number = 0;
-    private attackLockedUntil: number = 0;
     public queuedDirection: Direction = Direction.None;
 
     public x: number;
     public y: number;
     public health = 5;
     public maxHealth = 5;
-    public coins = 0;
+    public scrap = 0;
 
     public equippedWeapon: Weapon = Weapons.fist;
     public weapons: Weapon[] = [Weapons.fist];
 
     public equippedArmor: Armor = Armors.bare;
     public armors: Armor[] = [Armors.bare];
-
-    private emitter?: Phaser.GameObjects.Particles.ParticleEmitter;
-    private flashEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
 
     public sprite: Phaser.Physics.Arcade.Sprite;
     private keys: Keys;
@@ -107,7 +94,6 @@ export default class Player {
     }
 
     public update(time: number) {
-        this.time = time;
         const keys = this.keys;
 
         if (time < this.attackUntil) {
@@ -133,8 +119,37 @@ export default class Player {
         else if (down) this.queuedDirection = Direction.Down;
     }
 
+    public updateXY(
+        tilemap: Phaser.Tilemaps.Tilemap,
+        x: number,
+        y: number
+    ): Phaser.Types.Tweens.TweenBuilderConfig[] {
+        this.x = x;
+        this.y = y;
+        const oldX = this.sprite.x;
+        const tempX = tilemap.tileToWorldX(x)!;
+        const tempY = tilemap.tileToWorldY(y)!;
+        const newX = Phaser.Math.Snap.To(tempX, 32) + 16;
+        const newY = Phaser.Math.Snap.To(tempY, 32);
+
+        return [
+            {
+                targets: [this.sprite],
+                x: (newX + oldX) / 2,
+                y: newY - 6,
+                duration: 75,
+            },
+            {
+                targets: [this.sprite],
+                x: newX,
+                y: newY,
+                duration: 75,
+                delay: 75,
+            },
+        ];
+    }
+
     public addItem(item: ItemData) {
-        console.log(item);
         if (item.type === "weapon") {
             this.equippedWeapon = item as Weapon;
             this.weapons.push(item);
@@ -142,6 +157,9 @@ export default class Player {
         if (item.type === "armor") {
             this.equippedArmor = item as Armor;
             this.armors.push(item);
+        }
+        if (item.type === "currency") {
+            if (item.key === "scrap") this.scrap++;
         }
     }
 }

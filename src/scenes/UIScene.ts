@@ -91,16 +91,15 @@ export default class UIScene extends Phaser.Scene {
         this.scrapText = this.add.text(
             this.cameras.main.width - 55,
             65,
-            `x${this.player.coins}`,
+            `x${this.player.scrap}`,
             { fontSize: 24 }
         );
     }
 
-    update(time: number, delta: number) {
+    update() {
         if (!this.player) return;
 
         if (this.hearts.length) {
-            // console.log(this.player.health);
             for (let i = 0; i < this.player.maxHealth; i++) {
                 const full = this.player.health >= i + 1;
                 this.hearts[i].setFrame(
@@ -119,6 +118,10 @@ export default class UIScene extends Phaser.Scene {
             this.armor.setFrame(
                 Graphics.items.indices[this.player.equippedArmor.key]
             );
+        }
+
+        if (this.scrapText) {
+            this.scrapText.setText(`x${this.player.scrap}`);
         }
     }
 }

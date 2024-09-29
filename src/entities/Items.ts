@@ -1,7 +1,7 @@
 import * as Graphics from "./Graphics";
 
 interface ItemBase {
-    type: "weapon" | "armor";
+    type: "weapon" | "armor" | "currency";
     key: string;
     name: string;
 }
@@ -16,7 +16,12 @@ export interface Armor extends ItemBase {
     defense: number;
 }
 
-export type ItemData = Weapon | Armor;
+export interface Currency extends ItemBase {
+    type: "currency";
+    amount: number;
+}
+
+export type ItemData = Weapon | Armor | Currency;
 
 export const Weapons: Record<string, Weapon> = {
     fist: {
@@ -45,6 +50,15 @@ export const Armors: Record<string, Armor> = {
         key: "tunic",
         name: "Tunic",
         defense: 1,
+    },
+};
+
+export const Currencies: Record<string, Currency> = {
+    scrap: {
+        type: "currency",
+        key: "scrap",
+        name: "Scrap",
+        amount: 1,
     },
 };
 

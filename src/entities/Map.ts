@@ -1,4 +1,4 @@
-import Dungeoneer, { Dungeon } from "dungeoneer";
+import Dungeoneer from "dungeoneer";
 import * as Graphics from "./Graphics";
 import Tile, { TileType } from "./Tile";
 import { DungeonScene } from "../scenes/DungeonScene";
@@ -225,6 +225,18 @@ export default class Map {
         this.items.push(newItem);
     }
 
+    public placeItem(item: ItemData, x: number, y: number) {
+        const newItem = new Item(
+            Phaser.Math.Snap.To(this.tilemap.tileToWorldX(x)!, 32),
+            Phaser.Math.Snap.To(this.tilemap.tileToWorldX(y)!, 32),
+            x,
+            y,
+            item,
+            this.scene
+        );
+        this.items.push(newItem);
+    }
+
     public tileAt(x: number, y: number): Tile | null {
         if (y < 0 || y >= this.height || x < 0 || x >= this.width) {
             return null;
@@ -248,24 +260,26 @@ export default class Map {
 
     public moveEnemies(player: Player) {
         for (const goon of this.goons) {
+            if (goon.dead) continue;
             let tile: Tile | null = this.tileAt(
                 goon.x + (goon.movingRight ? 1 : -1),
                 goon.y
             );
-            if (tile) {
-                if (tile.collides) {
-                    goon.movingRight = !goon.movingRight;
-                    tile = this.tileAt(
-                        goon.x + (goon.movingRight ? 1 : -1),
-                        goon.y
-                    );
-                }
-                if (tile) {
-                    if (tile.x === player.x && tile.y === player.y) {
-                        player.health--;
-                    } else {
-                        goon.updateXY(this.tilemap, tile.x, tile.y);
-                    }
+            if (!tile) continue;
+            if (tile.collides) {
+                goon.movingRight = !goon.movingRight;
+                tile = this.tileAt(
+                    goon.x + (goon.movingRight ? 1 : -1),
+                    goon.y
+                );
+            }
+            if (!tile) continue;
+            if (tile.x === player.x && tile.y === player.y) {
+                player.health--;
+            } else {
+                const tweens = goon.updateXY(this.tilemap, tile.x, tile.y);
+                for (const tween of tweens) {
+                    this.scene.tweens.add(tween);
                 }
             }
         }
