@@ -1,4 +1,4 @@
-import LifeWillChange from "../assets/LifeWillChange.mp3";
+import LifeWillChange from "url:../assets/LifeWillChange.mp3";
 import Enemy, { Goon } from "../entities/Enemy";
 import FOVLayer from "../entities/FOV";
 import * as Graphics from "../entities/Graphics";
@@ -7,8 +7,8 @@ import Map from "../entities/Map";
 import Player, { Direction } from "../entities/Player";
 import Tile, { TileType } from "../entities/Tile";
 
-const worldTileHeight = 25;
-const worldTileWidth = 25;
+const worldTileHeight = 20;
+const worldTileWidth = 20;
 
 export class DungeonScene extends Phaser.Scene {
     private map: Map | null = null;
@@ -26,6 +26,13 @@ export class DungeonScene extends Phaser.Scene {
 
     constructor() {
         super("DungeonScene");
+    }
+
+    public get attack(): number {
+        if (!this.player) return 1;
+        const weaponDamage = this.player.equippedWeapon?.attack || 1;
+        const comboMultiplier = this.player.combo >= 30 ? 2 : 1;
+        return weaponDamage * comboMultiplier;
     }
 
     preload(): void {
@@ -273,7 +280,7 @@ export class DungeonScene extends Phaser.Scene {
                 }
             }
             if (queueAttack && enemy) {
-                const killed = enemy.attack(1);
+                const killed = enemy.attack(this.player.equippedWeapon.attack);
                 if (killed && this.map) {
                     this.map.placeItem(Currencies.scrap, enemy.x, enemy.y);
                 }

@@ -170,6 +170,18 @@ export const enemy: AnimSet = {
             frameRate: 16,
             hideOnComplete: true,
         },
+        bossIdle: {
+            key: "bossIdle",
+            frames: { start: 60, end: 63 },
+            frameRate: 2,
+            repeat: -1,
+        },
+        bossDeath: {
+            key: "bossDeath",
+            frames: { start: 100, end: 107 },
+            frameRate: 12,
+            hideOnComplete: true,
+        },
     },
 };
 

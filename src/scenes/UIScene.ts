@@ -10,6 +10,8 @@ export default class UIScene extends Phaser.Scene {
     private hearts: Phaser.GameObjects.Sprite[] = [];
     private weapon: Phaser.GameObjects.Sprite | null = null;
     private armor: Phaser.GameObjects.Sprite | null = null;
+    private weaponText: Phaser.GameObjects.Text | null = null;
+    private armorText: Phaser.GameObjects.Text | null = null;
     private scrapText: Phaser.GameObjects.Text | null = null;
     private comboText: Phaser.GameObjects.Text | null = null;
 
@@ -51,7 +53,11 @@ export default class UIScene extends Phaser.Scene {
         weaponRect.fillStyle(0x0);
         weaponRect.fillRect(30, 40, 100, 100);
         weaponRect.strokeRect(30, 40, 100, 100);
-        this.add.text(30, 20, "Weapon");
+        this.weaponText = this.add.text(
+            25,
+            20,
+            `Weapon - ${player.equippedWeapon.attack} ATK`
+        );
         this.weapon = this.add
             .sprite(
                 82,
@@ -69,7 +75,11 @@ export default class UIScene extends Phaser.Scene {
         armorRect.fillStyle(0x0);
         armorRect.fillRect(180, 40, 100, 100);
         armorRect.strokeRect(180, 40, 100, 100);
-        this.add.text(180, 20, "Armor");
+        this.armorText = this.add.text(
+            175,
+            20,
+            `Armor - ${player.equippedArmor.defense} DEF`
+        );
         this.armor = this.add
             .sprite(
                 232,

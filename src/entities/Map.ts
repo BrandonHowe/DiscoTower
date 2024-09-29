@@ -5,7 +5,7 @@ import { DungeonScene } from "../scenes/DungeonScene";
 import Player from "./Player";
 import Item, { Armors, ItemData, Weapons } from "./Items";
 import Portal from "./Portal";
-import Enemy, { Chaser, Drone, Goon, Sentinel } from "./Enemy";
+import Enemy, { Boss, Chaser, Drone, Goon, Sentinel } from "./Enemy";
 
 export default class Map {
     public readonly width: number;
@@ -66,10 +66,16 @@ export default class Map {
         const height = this.height;
 
         // Generate dungeon
-        const dungeon = Dungeoneer.build({
+        let dungeon = Dungeoneer.build({
             width: width,
             height: height,
         });
+        while (dungeon.rooms.length <= 2) {
+            dungeon = Dungeoneer.build({
+                width: width,
+                height: height,
+            });
+        }
         this.rooms = dungeon.rooms;
 
         // Create tiles from dungeon
@@ -102,10 +108,10 @@ export default class Map {
         }
 
         // Starting position of the player
-        const startingRoomNum = Math.floor(
-            Math.random() * dungeon.rooms.length
+        const firstRoom = this.rooms.reduce((acc, cur) =>
+            acc.width * acc.height < cur.width * cur.height ? acc : cur
         );
-        const firstRoom = dungeon.rooms[startingRoomNum];
+        const startingRoomNum = this.rooms.indexOf(firstRoom);
         this.startingX = Math.floor(firstRoom.x + firstRoom.width / 2);
         this.startingY = Math.floor(firstRoom.y + firstRoom.height / 2);
 
@@ -305,12 +311,35 @@ export default class Map {
         this.wallLayer = wallLayer;
         this.wallLayer.setDepth(2);
 
+        // Boss
+        if (level === 2) {
+            const largestRoom = this.rooms.reduce((acc, cur) =>
+                acc.width * acc.height > cur.width * cur.height ? acc : cur
+            );
+            const x = Phaser.Math.Between(
+                largestRoom.x + 1,
+                largestRoom.x + largestRoom.width - 1
+            );
+            const y = Phaser.Math.Between(
+                largestRoom.y + 1,
+                largestRoom.y + largestRoom.height - 1
+            );
+            const boss = new Boss(
+                Phaser.Math.Snap.To(this.tilemap.tileToWorldX(x)!, 32) + 16,
+                Phaser.Math.Snap.To(this.tilemap.tileToWorldX(y)!, 32) + 8,
+                x,
+                y,
+                this.scene
+            );
+            this.enemies.push(boss);
+        }
+
+        for (const portal of this.portals) {
+            portal.destroy();
+        }
+        this.portals = [];
         // Ending position
-        {
-            for (const portal of this.portals) {
-                portal.destroy();
-            }
-            this.portals = [];
+        if (level < 2) {
             let portalRoomNum = startingRoomNum;
             while (portalRoomNum === startingRoomNum) {
                 portalRoomNum = Phaser.Math.Between(0, this.rooms.length - 1);
@@ -480,10 +509,41 @@ export default class Map {
                     drone.y + (dir === 0 ? 1 : dir === 2 ? -1 : 0)
                 );
                 if (!tile || tile.collides) continue;
+            } else if (enemy.key === "bossIdle") {
+                const drone = enemy as Boss;
+                if (drone.turnTimer === 0) {
+                    drone.turnTimer++;
+                    continue;
+                }
+                drone.turnTimer = 0;
+                let distX = player.x - drone.x;
+                let distY = player.y - drone.y;
+                if (Math.abs(distY) > Math.abs(distX)) {
+                    distX = 0;
+                } else {
+                    distY = 0;
+                }
+                let inBetweenTile = this.tileAt(
+                    drone.x + (distX > 0 ? 1 : distX < 0 ? -1 : 0),
+                    drone.y + (distY > 0 ? 1 : distY < 0 ? -1 : 0)
+                );
+                // let doubleTile = this.tileAt(
+                //     drone.x + (distX > 0 ? 2 : distX < 0 ? -2 : 0),
+                //     drone.y + (distY > 0 ? 2 : distY < 0 ? -2 : 0)
+                // );
+                // console.log(inBetweenTile, doubleTile);
+                if (!inBetweenTile || inBetweenTile.collides) continue;
+                tile = inBetweenTile;
+                // if (inBetweenTile.collides && !doubleTile.collides) {
+                //     tile = inBetweenTile;
+                // } else if (!doubleTile.collides) {
+                //     tile = doubleTile;
+                // }
             }
             if (!tile) continue;
             if (tile.x === player.x && tile.y === player.y) {
-                player.health--;
+                player.health -=
+                    enemy.attackStrength - player.equippedArmor.defense;
             } else {
                 const tweens = enemy.updateXY(this.tilemap, tile.x, tile.y);
                 for (const tween of tweens) {

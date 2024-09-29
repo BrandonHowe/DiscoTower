@@ -4,6 +4,7 @@ type EnemyPreset = {
     key: string;
     deathKey: string;
     health: number;
+    attack: number;
     depth: number;
 };
 
@@ -13,24 +14,35 @@ export const EnemyPresets: Record<string, EnemyPreset> = {
         deathKey: "droneDeath",
         health: 1,
         depth: 11,
+        attack: 1,
     },
     goon: {
         key: "goonIdle",
         deathKey: "goonDeath",
         health: 3,
         depth: 12,
+        attack: 1,
     },
     sentinel: {
         key: "sentinelIdle",
         deathKey: "sentinelDeath",
         health: 2,
         depth: 9,
+        attack: 1,
     },
     chaser: {
         key: "chaserIdle",
         deathKey: "chaserDeath",
         health: 1,
         depth: 10,
+        attack: 1,
+    },
+    boss: {
+        key: "bossIdle",
+        deathKey: "bossDeath",
+        health: 7,
+        depth: 15,
+        attack: 2,
     },
 };
 
@@ -43,6 +55,7 @@ export default class Enemy {
     public y: number;
     public health: number;
     public maxHealth: number;
+    public attackStrength: number;
     public key: string;
     public deathKey: string;
     public dead = false;
@@ -60,6 +73,7 @@ export default class Enemy {
 
         this.maxHealth = preset.health;
         this.health = preset.health;
+        this.attackStrength = preset.attack;
         this.key = preset.key;
         this.deathKey = preset.deathKey;
 
@@ -202,5 +216,19 @@ export class Drone extends Enemy {
         scene: Phaser.Scene
     ) {
         super(x, y, worldX, worldY, EnemyPresets.drone, scene);
+    }
+}
+
+export class Boss extends Enemy {
+    public turnTimer: number = 0;
+
+    constructor(
+        x: number,
+        y: number,
+        worldX: number,
+        worldY: number,
+        scene: Phaser.Scene
+    ) {
+        super(x, y, worldX, worldY, EnemyPresets.boss, scene);
     }
 }

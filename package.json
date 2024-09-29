@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "parcel": "parcel index.html",
-    "build": "tsc -b && vite build",
+    "build": "rm -rf dist && parcel build index.html --no-source-maps",
     "lint": "eslint .",
     "preview": "vite preview"
   },
