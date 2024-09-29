@@ -72,4 +72,8 @@ export default class Goon implements Enemy {
         this.sprite.anims.play(Graphics.goon.animations.death.key, false);
         this.dead = true;
     }
+
+    destroy() {
+        this.sprite.destroy();
+    }
 }

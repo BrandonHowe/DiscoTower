@@ -17,7 +17,6 @@ export class DungeonScene extends Phaser.Scene {
     public fov: FOVLayer | null = null;
 
     public goons: Goon[] = [];
-    public goonGroup: Phaser.GameObjects.Group | null = null;
 
     private leftLines: Phaser.GameObjects.Graphics[] = [];
     private rightLines: Phaser.GameObjects.Graphics[] = [];
@@ -30,6 +29,7 @@ export class DungeonScene extends Phaser.Scene {
     }
 
     preload(): void {
+        this.load.audio("LifeWillChange", LifeWillChange);
         this.load.image(Graphics.environment.name, Graphics.environment.file);
         this.load.image(Graphics.util.name, Graphics.util.file);
         this.load.spritesheet(Graphics.player.name, Graphics.player.file, {
@@ -41,10 +41,17 @@ export class DungeonScene extends Phaser.Scene {
             frameWidth: Graphics.goon.width,
         });
         this.load.spritesheet(Graphics.items.name, Graphics.items.file, {
-            frameWidth: 32,
-            frameHeight: 32,
+            frameWidth: Graphics.items.width,
+            frameHeight: Graphics.items.height,
         });
-        this.load.audio("LifeWillChange", LifeWillChange);
+        this.load.spritesheet(
+            Graphics.teleporters.name,
+            Graphics.teleporters.file,
+            {
+                frameWidth: Graphics.teleporters.height,
+                frameHeight: Graphics.teleporters.height,
+            }
+        );
     }
 
     create(): void {
@@ -64,6 +71,17 @@ export class DungeonScene extends Phaser.Scene {
                 });
             }
         });
+        Object.values(Graphics.teleporters.animations).forEach((anim) => {
+            if (!this.anims.get(anim.key)) {
+                this.anims.create({
+                    ...anim,
+                    frames: this.anims.generateFrameNumbers(
+                        Graphics.teleporters.name,
+                        anim.frames
+                    ),
+                });
+            }
+        });
         Object.values(Graphics.goon.animations).forEach((anim) => {
             if (!this.anims.get(anim.key)) {
                 this.anims.create({
@@ -77,38 +95,19 @@ export class DungeonScene extends Phaser.Scene {
         });
 
         // Init map and player
-        const map = new Map(worldTileWidth, worldTileHeight, this);
-        this.map = map;
-        this.tilemap = map.tilemap;
-        this.fov = new FOVLayer(map);
+        this.initLevel();
 
         this.cameras.main.setRoundPixels(true);
-        this.cameras.main.setZoom(1);
-        this.cameras.main.setBounds(
-            0,
-            0,
-            map.width * Graphics.environment.width,
-            map.height * Graphics.environment.height
-        );
-
-        this.player = new Player(
-            Phaser.Math.Snap.To(this.tilemap.tileToWorldX(map.startingX)!, 32) +
-                16,
-            Phaser.Math.Snap.To(this.tilemap.tileToWorldY(map.startingY)!, 32) -
-                4,
-            map.startingX,
-            map.startingY,
-            this
-        );
+        this.cameras.main.setZoom(2);
+        // this.cameras.main.setBounds(
+        //     0,
+        //     0,
+        //     worldTileWidth * Graphics.environment.width,
+        //     worldTileHeight * Graphics.environment.height
+        // );
+        this.cameras.main.startFollow(this.player!.sprite);
 
         this.scene.run("UIScene", { player: this.player });
-
-        this.cameras.main.startFollow(this.player.sprite);
-
-        this.goons = this.map.goons;
-        this.goonGroup = this.physics.add.group(
-            this.goons.map((s) => s.sprite)
-        );
 
         this.input.keyboard!.on("keydown-F", () => {
             this.fov!.layer.setVisible(!this.fov!.layer.visible);
@@ -167,14 +166,33 @@ export class DungeonScene extends Phaser.Scene {
         }
     }
 
+    private initLevel() {
+        const map = new Map(worldTileWidth, worldTileHeight, this);
+        this.map = map;
+        this.tilemap = map.tilemap;
+        this.fov = new FOVLayer(map);
+
+        this.player = new Player(
+            Phaser.Math.Snap.To(this.tilemap.tileToWorldX(map.startingX)!, 32) +
+                16,
+            Phaser.Math.Snap.To(this.tilemap.tileToWorldY(map.startingY)!, 32) -
+                4,
+            map.startingX,
+            map.startingY,
+            this
+        );
+
+        this.goons = this.map.goons;
+    }
+
     private nextHeartbeat = 0;
     public tryHeartbeat(time: number) {
-        if (!this.player) return;
+        if (!this.player || !this.map) return;
         if (time > this.nextHeartbeat) {
             console.log("Heartbeat!");
             this.nextHeartbeat += this.msPerBeat;
 
-            this.map?.toggleTint();
+            this.map?.toggleTint(this.player.level);
             this.player.heartbeat();
 
             let queueMove = false;
@@ -259,9 +277,28 @@ export class DungeonScene extends Phaser.Scene {
                 );
                 for (const tween of tweens) this.tweens.add(tween);
 
-                const item = this.map?.itemAt(this.player.x, this.player.y);
-                if (item && this.map) {
-                    console.log("hit the item", item);
+                if (!this.map) return;
+
+                const portal = this.map.portalAt(this.player.x, this.player.y);
+                if (portal) {
+                    portal.enter();
+                    const self = this;
+                    setTimeout(() => {
+                        self.map!.regenerateDungeon();
+                        const tweens = self.player!.updateXY(
+                            self.tilemap!,
+                            self.map!.portalX,
+                            self.map!.portalY,
+                            false
+                        );
+                        for (const tween of tweens) this.tweens.add(tween);
+                        self.player!.level++;
+                    }, 2000);
+                    return;
+                }
+
+                const item = this.map.itemAt(this.player.x, this.player.y);
+                if (item) {
                     this.map.items.splice(this.map.items.indexOf(item), 1);
                     this.player.addItem(item.data);
                     item.destroy();
@@ -282,8 +319,8 @@ export class DungeonScene extends Phaser.Scene {
 
         // Draw a vertical line from the top to the bottom of the screen
         line.beginPath();
-        line.moveTo(0, window.innerHeight - 100);
-        line.lineTo(0, window.innerHeight - 50);
+        line.moveTo(0, (window.innerHeight * 3) / 4 - 50);
+        line.lineTo(0, (window.innerHeight * 3) / 4 - 25);
         line.strokePath();
     }
 }

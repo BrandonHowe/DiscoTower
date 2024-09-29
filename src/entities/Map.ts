@@ -5,33 +5,65 @@ import { DungeonScene } from "../scenes/DungeonScene";
 import Goon from "./Goon";
 import Player from "./Player";
 import Item, { Armors, ItemData, Weapons } from "./Items";
+import Portal from "./Portal";
 
 export default class Map {
     public readonly width: number;
     public readonly height: number;
-    public readonly startingX: number;
-    public readonly startingY: number;
+    public startingX!: number;
+    public startingY!: number;
+
+    public portalX!: number;
+    public portalY!: number;
+    public portalSprite!: Phaser.GameObjects.Sprite;
 
     private tintingEven = false;
 
-    public readonly tiles: Tile[][];
-    public readonly tilemap: Phaser.Tilemaps.Tilemap;
+    public tiles!: Tile[][];
+    public tilemap!: Phaser.Tilemaps.Tilemap;
 
-    public readonly groundLayer: Phaser.Tilemaps.TilemapLayer;
-    public readonly wallLayer: Phaser.Tilemaps.TilemapLayer;
-    public readonly doorLayer: Phaser.Tilemaps.TilemapLayer;
+    public groundLayer!: Phaser.Tilemaps.TilemapLayer;
+    public wallLayer!: Phaser.Tilemaps.TilemapLayer;
+    public doorLayer!: Phaser.Tilemaps.TilemapLayer;
 
-    public readonly rooms: Dungeoneer.Room[];
+    public rooms!: Dungeoneer.Room[];
 
-    public readonly goons: Goon[] = [];
-    public readonly items: Item[] = [];
+    public goons: Goon[] = [];
+    public items: Item[] = [];
+    public portals: Portal[] = [];
 
     private readonly scene: DungeonScene;
+    private dungeonTiles: Phaser.Tilemaps.Tileset;
 
     constructor(width: number, height: number, scene: DungeonScene) {
         this.width = width;
         this.height = height;
         this.scene = scene;
+
+        this.tilemap = scene.make.tilemap({
+            tileWidth: 32,
+            tileHeight: 32,
+            width,
+            height,
+        });
+        const dungeonTiles = this.tilemap.addTilesetImage(
+            Graphics.environment.name,
+            Graphics.environment.name,
+            Graphics.environment.width,
+            Graphics.environment.height,
+            Graphics.environment.margin,
+            Graphics.environment.spacing
+        );
+        if (dungeonTiles === null)
+            throw new Error("Failed to load dungeon tiles");
+        this.dungeonTiles = dungeonTiles;
+
+        this.regenerateDungeon();
+    }
+
+    public regenerateDungeon() {
+        const width = this.width;
+        const height = this.height;
 
         // Generate dungeon
         const dungeon = Dungeoneer.build({
@@ -70,53 +102,41 @@ export default class Map {
         }
 
         // Starting position of the player
-        const roomNumber = Math.floor(Math.random() * dungeon.rooms.length);
-        const firstRoom = dungeon.rooms[roomNumber];
+        const startingRoomNum = Math.floor(
+            Math.random() * dungeon.rooms.length
+        );
+        const firstRoom = dungeon.rooms[startingRoomNum];
         this.startingX = Math.floor(firstRoom.x + firstRoom.width / 2);
         this.startingY = Math.floor(firstRoom.y + firstRoom.height / 2);
 
-        // Load up tilemaps
-        this.tilemap = scene.make.tilemap({
-            tileWidth: 32,
-            tileHeight: 32,
-            width,
-            height,
-        });
-        const dungeonTiles = this.tilemap.addTilesetImage(
-            Graphics.environment.name,
-            Graphics.environment.name,
-            Graphics.environment.width,
-            Graphics.environment.height,
-            Graphics.environment.margin,
-            Graphics.environment.spacing
-        );
-        if (dungeonTiles === null)
-            throw new Error("Failed to load dungeon tiles");
-
         // Init ground
-        const groundLayer = this.tilemap
-            .createBlankLayer("Ground", dungeonTiles, 0, 0)
-            ?.randomize(
+        let groundLayer: Phaser.Tilemaps.TilemapLayer | null | undefined =
+            this.tilemap.getLayer("Ground")?.tilemapLayer;
+        if (!groundLayer) {
+            groundLayer = this.tilemap.createBlankLayer(
+                "Ground",
+                this.dungeonTiles,
                 0,
-                0,
-                this.width,
-                this.height,
-                Graphics.environment.indices.floor.outerCorridor
+                0
             );
+        }
         if (!groundLayer) throw new Error("Failed to init ground layer");
-        this.groundLayer = groundLayer;
+        this.groundLayer = groundLayer.randomize(
+            0,
+            0,
+            this.width,
+            this.height,
+            Graphics.environment.indices.floor.outerCorridor
+        );
         this.groundLayer.setDepth(1);
 
+        for (const goon of this.goons) {
+            goon.destroy();
+        }
+        this.goons = [];
         for (let i = 0; i < dungeon.rooms.length; i++) {
-            if (i === roomNumber) continue;
+            if (i === startingRoomNum) continue;
             const room = dungeon.rooms[i];
-            // groundLayer.randomize(
-            //     room.x - 1,
-            //     room.y - 1,
-            //     room.width + 2,
-            //     room.height + 2,
-            //     Graphics.environment.indices.floor.outer
-            // );
 
             if (room.height < 4 || room.width < 4) {
                 continue;
@@ -137,43 +157,60 @@ export default class Map {
                     Phaser.Math.Snap.To(this.tilemap.tileToWorldX(y)!, 32) + 4,
                     x,
                     y,
-                    scene
+                    this.scene
                 );
                 this.goons.push(newGoon);
             }
         }
 
-        this.createItem(Weapons.dagger, roomNumber);
-        this.createItem(Armors.tunic, roomNumber);
+        for (const item of this.items) {
+            item.destroy();
+        }
+        this.items = [];
+        this.createItem(Weapons.dagger, startingRoomNum);
+        this.createItem(Armors.tunic, startingRoomNum);
 
         // Init walls and doors
-        const wallLayer = this.tilemap.createBlankLayer(
-            "Wall",
-            dungeonTiles,
-            0,
-            0
-        );
-        if (!wallLayer) throw new Error("Failed to init wall layer");
-        const doorLayer = this.tilemap.createBlankLayer(
-            "Door",
-            dungeonTiles,
-            0,
-            0
-        );
-        if (!doorLayer) throw new Error("Failed to init door layer");
+        let wallLayer = this.tilemap.getLayer("Wall")?.tilemapLayer;
+        if (!wallLayer) {
+            const newWallLayer = this.tilemap.createBlankLayer(
+                "Wall",
+                this.dungeonTiles,
+                0,
+                0
+            );
+            if (!newWallLayer) throw new Error("Failed to init wall layer");
+            wallLayer = newWallLayer;
+        }
+
+        let doorLayer = this.tilemap.getLayer("Door")?.tilemapLayer;
+        if (!doorLayer) {
+            const newDoorLayer = this.tilemap.createBlankLayer(
+                "Door",
+                this.dungeonTiles,
+                0,
+                0
+            );
+            if (!newDoorLayer) throw new Error("Failed to init door layer");
+            doorLayer = newDoorLayer;
+        }
 
         for (let x = 0; x < width; x++) {
             for (let y = 0; y < height; y++) {
                 const tile = this.tiles[y][x];
                 if (tile.type === TileType.Wall) {
                     wallLayer.putTileAt(tile.spriteIndex(), x, y);
+                    doorLayer.removeTileAt(x, y);
                 } else if (tile.type === TileType.Door) {
                     doorLayer.putTileAt(tile.spriteIndex(), x, y);
+                    wallLayer.removeTileAt(x, y);
+                } else {
+                    wallLayer.removeTileAt(x, y);
+                    doorLayer.removeTileAt(x, y);
                 }
             }
         }
 
-        wallLayer.setCollisionBetween(0, 0x7f);
         const collidableDoors = [
             Graphics.environment.indices.doors.horizontal,
             Graphics.environment.indices.doors.vertical,
@@ -195,7 +232,7 @@ export default class Map {
                     );
                 }
                 // this.tileAt(tile.x, tile.y)!.open();
-                scene.fov!.recalculate();
+                this.scene.fov!.recalculate();
             },
             this
         );
@@ -204,6 +241,62 @@ export default class Map {
 
         this.wallLayer = wallLayer;
         this.wallLayer.setDepth(2);
+
+        for (const portal of this.portals) {
+            portal.destroy();
+        }
+        this.portals = [];
+        let portalRoomNum = startingRoomNum;
+        while (portalRoomNum !== startingRoomNum) {
+            portalRoomNum = Phaser.Math.Between(0, this.rooms.length);
+        }
+        const portalRoom = this.rooms[portalRoomNum];
+        this.portalX = Phaser.Math.Between(
+            portalRoom.x + 1,
+            portalRoom.x + portalRoom.width - 1
+        );
+        this.portalY = Phaser.Math.Between(
+            portalRoom.y + 1,
+            portalRoom.y + portalRoom.height - 1
+        );
+        const newPortal = new Portal(
+            Phaser.Math.Snap.To(this.tilemap.tileToWorldX(this.portalX)!, 32) +
+                18,
+            Phaser.Math.Snap.To(this.tilemap.tileToWorldX(this.portalY)!, 32),
+            this.portalX,
+            this.portalY,
+            this.scene
+        );
+        this.portals.push(newPortal);
+
+        if (!this.portalSprite) {
+            this.portalSprite = this.scene.add.sprite(
+                Phaser.Math.Snap.To(
+                    this.tilemap.tileToWorldX(this.portalX)!,
+                    32
+                ) + 18,
+                Phaser.Math.Snap.To(
+                    this.tilemap.tileToWorldX(this.portalY)!,
+                    32
+                ),
+                Graphics.teleporters.name,
+                5
+            );
+            this.portalSprite.setScale(2);
+            this.portalSprite.setDepth(10);
+            // this.portalSprite.anims.play(
+            //     Graphics.teleporters.animations.teleporterIdle.key
+            // );
+        } else {
+            this.portalSprite.x = Phaser.Math.Snap.To(
+                this.tilemap.tileToWorldX(this.portalX)!,
+                32
+            );
+            this.portalSprite.x = Phaser.Math.Snap.To(
+                this.tilemap.tileToWorldX(this.portalY)!,
+                32
+            );
+        }
     }
 
     public createItem(item: ItemData, excludeRoom: number) {
@@ -303,24 +396,27 @@ export default class Map {
         return null;
     }
 
-    public toggleTint() {
+    public portalAt(x: number, y: number): Portal | null {
+        for (const portal of this.portals) {
+            if (portal.x === x && portal.y === y) {
+                return portal;
+            }
+        }
+        return null;
+    }
+
+    public toggleTint(level: number) {
         this.tintingEven = !this.tintingEven;
 
-        // for (let y = 0; y < this.tiles.length; y++) {
-        //     for (let x = 0; x < this.tiles[y].length; x++) {
-        //         const tileData = this.tiles[y][x];
-        //         if (tileData.type !== TileType.None) continue;
-        //         const parity = (y % 2 === 0) === (x % 2 === 0);
-        //         const tile = this.tilemap.getTileAt(x, y);
-        //         if (!tile) continue;
-        //         if (parity === this.tintingEven) {
-        //             tile.tint = 0xff0000;
-        //         } else {
-        //             tile.tint = 0x00ff00;
-        //         }
-        //     }
-        // }
+        const presets = [
+            [0xff0000, 0xffffff],
+            [0x0000ff, 0xffd700],
+            [0xffc0cb, 0x00ff00],
+        ];
 
-        this.groundLayer.setTint(this.tintingEven ? 0xff0000 : 0x00ff00);
+        const currentTint =
+            presets[level % presets.length][Number(this.tintingEven)];
+
+        this.groundLayer.setTint(currentTint);
     }
 }

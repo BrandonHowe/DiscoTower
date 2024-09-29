@@ -36,6 +36,8 @@ export default class Player {
     public maxHealth = 5;
     public scrap = 0;
 
+    public level: number = 0;
+
     public equippedWeapon: Weapon = Weapons.fist;
     public weapons: Weapon[] = [Weapons.fist];
 
@@ -122,7 +124,8 @@ export default class Player {
     public updateXY(
         tilemap: Phaser.Tilemaps.Tilemap,
         x: number,
-        y: number
+        y: number,
+        newLevel: boolean = false
     ): Phaser.Types.Tweens.TweenBuilderConfig[] {
         this.x = x;
         this.y = y;
@@ -138,13 +141,14 @@ export default class Player {
                 x: (newX + oldX) / 2,
                 y: newY - 6,
                 duration: 75,
+                delay: newLevel ? 500 : 0,
             },
             {
                 targets: [this.sprite],
                 x: newX,
                 y: newY,
                 duration: 75,
-                delay: 75,
+                delay: newLevel ? 575 : 75,
             },
         ];
     }

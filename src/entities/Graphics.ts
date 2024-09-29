@@ -3,6 +3,7 @@ import Enemies from "../assets/enemies.png";
 import Hearts from "../assets/hearts.png";
 import Items from "../assets/items.png";
 import PlayerBlue from "../assets/playerblue.png";
+import Teleporters from "../assets/teleporters.png";
 import Util from "../assets/util.png";
 
 type AnimConfig = {
@@ -89,6 +90,27 @@ export const player: AnimSet = {
             key: "walk",
             frames: { start: 30, end: 33 },
             frameRate: 6,
+            repeat: -1,
+        },
+    },
+};
+
+export const teleporters: AnimSet = {
+    name: "teleporters",
+    width: 32,
+    height: 32,
+    file: Teleporters,
+    animations: {
+        teleporterIdle: {
+            key: "teleporterIdle",
+            frames: { start: 8, end: 11 },
+            frameRate: 2,
+            repeat: -1,
+        },
+        teleporterActive: {
+            key: "teleporterActive",
+            frames: { start: 0, end: 3 },
+            frameRate: 2,
             repeat: -1,
         },
     },
