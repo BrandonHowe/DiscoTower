@@ -148,6 +148,12 @@ export default class Player {
         const newX = Phaser.Math.Snap.To(tempX, 32) + 16;
         const newY = Phaser.Math.Snap.To(tempY, 32);
 
+        if (newLevel) {
+            this.sprite.x = newX;
+            this.sprite.y = newY;
+            return [];
+        }
+
         return [
             {
                 targets: [this.sprite],

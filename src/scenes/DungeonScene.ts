@@ -298,9 +298,9 @@ export class DungeonScene extends Phaser.Scene {
                         self.map!.regenerateDungeon(self.player!.level + 1);
                         const tweens = self.player!.updateXY(
                             self.tilemap!,
-                            self.map!.portalX,
-                            self.map!.portalY,
-                            false
+                            self.map!.startingX,
+                            self.map!.startingY,
+                            true
                         );
                         for (const tween of tweens) this.tweens.add(tween);
                         self.player!.level++;
@@ -317,6 +317,13 @@ export class DungeonScene extends Phaser.Scene {
             }
 
             this.map?.moveEnemies(this.player);
+
+            if (this.player.health <= 0) {
+                this.scene.stop();
+                this.scene.stop("UIScene");
+
+                this.scene.start("DeathScene");
+            }
         }
     }
 

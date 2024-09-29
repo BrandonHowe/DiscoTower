@@ -313,9 +313,9 @@ export default class Map {
             this.portals = [];
             let portalRoomNum = startingRoomNum;
             while (portalRoomNum === startingRoomNum) {
-                portalRoomNum = Phaser.Math.Between(0, this.rooms.length);
+                portalRoomNum = Phaser.Math.Between(0, this.rooms.length - 1);
             }
-            console.log(portalRoomNum, startingRoomNum, this.rooms.length);
+            console.log("starting at ", startingRoomNum, portalRoomNum);
             const portalRoom = this.rooms[portalRoomNum];
             this.portalX = Phaser.Math.Between(
                 portalRoom.x + 1,
@@ -363,7 +363,7 @@ export default class Map {
                     this.tilemap.tileToWorldX(this.portalX)!,
                     32
                 );
-                this.portalSprite.x = Phaser.Math.Snap.To(
+                this.portalSprite.y = Phaser.Math.Snap.To(
                     this.tilemap.tileToWorldX(this.portalY)!,
                     32
                 );
@@ -392,8 +392,8 @@ export default class Map {
 
     public createItem(item: ItemData, excludeRoom: number) {
         let weaponRoom = excludeRoom;
-        while (weaponRoom !== excludeRoom) {
-            weaponRoom = Phaser.Math.Between(0, this.rooms.length);
+        while (weaponRoom === excludeRoom) {
+            weaponRoom = Phaser.Math.Between(0, this.rooms.length - 1);
         }
         const room = this.rooms[weaponRoom];
         const x = Phaser.Math.Between(room.x + 1, room.x + room.width - 1);

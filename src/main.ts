@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import { DungeonScene } from "./scenes/DungeonScene";
 import UIScene from "./scenes/UIScene";
+import TitleScene from "./scenes/TitleScene";
+import DeathScene from "./scenes/DeathScene";
 
 export default new Phaser.Game({
     type: Phaser.WEBGL,
@@ -11,7 +13,7 @@ export default new Phaser.Game({
         default: "arcade",
         arcade: { debug: false, gravity: { x: 0, y: 0 } },
     },
-    scene: [DungeonScene, UIScene],
+    scene: [TitleScene, DungeonScene, UIScene, DeathScene],
     scale: {
         mode: Phaser.Scale.RESIZE,
     },
