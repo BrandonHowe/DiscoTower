@@ -9,7 +9,9 @@
     "noImplicitThis": true,
     "noFallthroughCasesInSwitch": true,
 
-    "esModuleInterop": true
+    "esModuleInterop": true,
+
+    "typeRoots": ["./src"]
   },
   "files": [],
   "references": [

@@ -1,5 +1,5 @@
-import LifeWillChange from "url:../assets/LifeWillChange.mp3";
-import Enemy, { Goon } from "../entities/Enemy";
+import LifeWillChange from "../assets/LifeWillChange.mp3";
+import Enemy from "../entities/Enemy";
 import FOVLayer from "../entities/FOV";
 import * as Graphics from "../entities/Graphics";
 import { Currencies } from "../entities/Items";
@@ -328,6 +328,7 @@ export class DungeonScene extends Phaser.Scene {
             if (this.player.health <= 0) {
                 this.scene.stop();
                 this.scene.stop("UIScene");
+                this.sound.stopAll();
 
                 this.scene.start("DeathScene");
             }

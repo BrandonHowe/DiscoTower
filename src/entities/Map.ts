@@ -1,4 +1,4 @@
-import Dungeoneer from "dungeoneer";
+import Dungeoneer, { Tile as DungeoneerTile } from "dungeoneer";
 import * as Graphics from "./Graphics";
 import Tile, { TileType } from "./Tile";
 import { DungeonScene } from "../scenes/DungeonScene";
@@ -67,16 +67,47 @@ export default class Map {
 
         // Generate dungeon
         let dungeon = Dungeoneer.build({
-            width: width,
-            height: height,
+            width: width - 2,
+            height: height - 2,
         });
         while (dungeon.rooms.length <= 2) {
             dungeon = Dungeoneer.build({
-                width: width,
-                height: height,
+                width: width - 2,
+                height: height - 2,
             });
         }
         this.rooms = dungeon.rooms;
+        for (const room of this.rooms) {
+            room.x++;
+            room.y++;
+        }
+        for (let i = 0; i < dungeon.tiles.length; i++) {
+            const row = dungeon.tiles[i];
+            for (const el of row) {
+                el.x++;
+                el.y++;
+            }
+            row.push({
+                type: "wall",
+                x: row.length + 1,
+                y: i + 1,
+            } as DungeoneerTile);
+            row.unshift({ type: "wall", x: 0, y: i + 1 } as DungeoneerTile);
+        }
+        const topRow: DungeoneerTile[] = [];
+        for (let i = 0; i < dungeon.tiles[0].length; i++) {
+            topRow.push({ type: "wall", x: i, y: 0 } as DungeoneerTile);
+        }
+        const bottomRow: DungeoneerTile[] = [];
+        for (let i = 0; i < dungeon.tiles[0].length; i++) {
+            bottomRow.push({
+                type: "wall",
+                x: i,
+                y: dungeon.tiles.length,
+            } as DungeoneerTile);
+        }
+        dungeon.tiles.unshift(topRow);
+        dungeon.tiles.push(bottomRow);
 
         // Create tiles from dungeon
         this.tiles = [];
@@ -472,6 +503,7 @@ export default class Map {
     }
 
     public moveEnemies(player: Player) {
+        let tookDamage = false;
         for (const enemy of this.enemies) {
             if (enemy.dead) continue;
             let tile: Tile | null = null;
@@ -541,9 +573,10 @@ export default class Map {
                 // }
             }
             if (!tile) continue;
-            if (tile.x === player.x && tile.y === player.y) {
+            if (tile.x === player.x && tile.y === player.y && !tookDamage) {
                 player.health -=
                     enemy.attackStrength - player.equippedArmor.defense;
+                tookDamage = true;
             } else {
                 const tweens = enemy.updateXY(this.tilemap, tile.x, tile.y);
                 for (const tween of tweens) {

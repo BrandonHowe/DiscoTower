@@ -7,11 +7,13 @@
     "dev": "vite",
     "parcel": "parcel index.html",
     "build": "rm -rf dist && parcel build index.html --no-source-maps --public-url ./",
+    "deploy": "gh-pages -d dist",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
     "dungeoneer": "^2.1.5",
+    "gh-pages": "^6.1.1",
     "mrpas": "^2.0.0",
     "parcel": "^2.12.0",
     "phaser": "^3.85.2"
