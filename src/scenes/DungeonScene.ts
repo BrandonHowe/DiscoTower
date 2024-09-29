@@ -1,4 +1,5 @@
 import BackgroundShader from "url:../assets/background.txt";
+import Balatro from "url:../assets/balatro.png";
 import LifeWillChange from "url:../assets/LifeWillChange.mp3";
 import Oof from "url:../assets/oof.mp3";
 import Clang from "url:../assets/clang.mp3";
@@ -38,6 +39,8 @@ export class DungeonScene extends Phaser.Scene {
     public powerDown: PhaserSound | null = null;
     public heal: PhaserSound | null = null;
 
+    private background: Phaser.GameObjects.TileSprite | null = null;
+
     private bpm = 128;
     private msPerBeat = 60000 / this.bpm;
 
@@ -61,6 +64,7 @@ export class DungeonScene extends Phaser.Scene {
         this.load.audio("PowerUp", PowerUp);
         this.load.audio("PowerDown", PowerDown);
         this.load.audio("Heal", Heal);
+        this.load.image("Balatro", Balatro);
         this.load.image(Graphics.environment.name, Graphics.environment.file);
         this.load.image(Graphics.util.name, Graphics.util.file);
         this.load.spritesheet(Graphics.hearts.name, Graphics.hearts.file, {
@@ -147,6 +151,18 @@ export class DungeonScene extends Phaser.Scene {
         // );
         this.cameras.main.startFollow(this.player!.sprite);
 
+        // Create a full-screen image
+        this.background = this.add
+            .tileSprite(
+                0,
+                0,
+                this.cameras.main.width,
+                this.cameras.main.height,
+                "Balatro"
+            )
+            .setOrigin(0, 0);
+        this.background.setScrollFactor(0);
+
         this.scene.run("UIScene", { player: this.player });
 
         this.input.keyboard!.on("keydown-F", () => {
@@ -178,6 +194,10 @@ export class DungeonScene extends Phaser.Scene {
         this.player!.update(time);
 
         const camera = this.cameras.main;
+
+        if (this.background) {
+            this.background.tilePositionX += 0.03;
+        }
 
         if (!this.tilemap) return;
 
@@ -373,6 +393,7 @@ export class DungeonScene extends Phaser.Scene {
                         );
                         for (const tween of tweens) this.tweens.add(tween);
                         self.player!.level++;
+                        self.fov?.newLevel();
                     }, 2000);
                     return;
                 }

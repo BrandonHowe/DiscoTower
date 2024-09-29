@@ -157,6 +157,14 @@ export default class FOVLayer {
         );
     }
 
+    public newLevel() {
+        for (let i = 0; i < this.map.tiles.length; i++) {
+            for (let j = 0; j < this.map.tiles[i].length; j++) {
+                this.map.tiles[i][j].seen = false;
+            }
+        }
+    }
+
     public setEnabled(val: boolean) {
         this.enabled = val;
     }
