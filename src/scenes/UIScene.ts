@@ -11,6 +11,7 @@ export default class UIScene extends Phaser.Scene {
     private weapon: Phaser.GameObjects.Sprite | null = null;
     private armor: Phaser.GameObjects.Sprite | null = null;
     private scrapText: Phaser.GameObjects.Text | null = null;
+    private comboText: Phaser.GameObjects.Text | null = null;
 
     constructor() {
         super({ key: "UIScene" });
@@ -94,6 +95,25 @@ export default class UIScene extends Phaser.Scene {
             `x${this.player.scrap}`,
             { fontSize: 24 }
         );
+
+        const combo = this.add
+            .sprite(
+                this.cameras.main.width - 150,
+                175,
+                Graphics.hearts.name,
+                Graphics.hearts.indices.combo
+            )
+            .setScrollFactor(0);
+        combo.scale = 3;
+        this.add.text(this.cameras.main.width - 105, 150, `COMBO:`, {
+            fontSize: 24,
+        });
+        this.comboText = this.add.text(
+            this.cameras.main.width - 105,
+            170,
+            `x${this.player.combo}`,
+            { fontSize: 24 }
+        );
     }
 
     update() {
@@ -122,6 +142,10 @@ export default class UIScene extends Phaser.Scene {
 
         if (this.scrapText) {
             this.scrapText.setText(`x${this.player.scrap}`);
+        }
+
+        if (this.comboText) {
+            this.comboText.setText(`x${this.player.combo}`);
         }
     }
 }

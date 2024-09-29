@@ -116,21 +116,57 @@ export const teleporters: AnimSet = {
     },
 };
 
-export const goon: AnimSet = {
-    name: "goon",
+export const enemy: AnimSet = {
+    name: "enemy",
     width: 32,
     height: 32,
     file: Enemies,
     animations: {
-        idle: {
-            key: "idle",
+        droneIdle: {
+            key: "droneIdle",
+            frames: { frames: [0, 1, 2, 3] },
+            frameRate: 6,
+            repeat: -1,
+        },
+        droneDeath: {
+            key: "droneDeath",
+            frames: { start: 30, end: 36 },
+            frameRate: 16,
+            hideOnComplete: true,
+        },
+        goonIdle: {
+            key: "goonIdle",
             frames: { frames: [120, 122, 123] },
             frameRate: 6,
             repeat: -1,
         },
-        death: {
-            key: "death",
-            frames: { start: 150, end: 155 },
+        goonDeath: {
+            key: "goonDeath",
+            frames: { start: 150, end: 156 },
+            frameRate: 16,
+            hideOnComplete: true,
+        },
+        sentinelIdle: {
+            key: "sentinelIdle",
+            frames: { frames: [170, 171] },
+            frameRate: 2,
+            repeat: -1,
+        },
+        sentinelDeath: {
+            key: "sentinelDeath",
+            frames: { start: 200, end: 206 },
+            frameRate: 16,
+            hideOnComplete: true,
+        },
+        chaserIdle: {
+            key: "chaserIdle",
+            frames: { start: 340, end: 343 },
+            frameRate: 2,
+            repeat: -1,
+        },
+        chaserDeath: {
+            key: "chaserDeath",
+            frames: { start: 370, end: 373 },
             frameRate: 16,
             hideOnComplete: true,
         },
@@ -148,6 +184,7 @@ export const hearts = {
         full: 0x00,
         empty: 0x01,
         scrap: 0x02,
+        combo: 0x03,
     },
 };
 

@@ -1,6 +1,6 @@
 import LifeWillChange from "../assets/LifeWillChange.mp3";
+import Enemy, { Goon } from "../entities/Enemy";
 import FOVLayer from "../entities/FOV";
-import Goon from "../entities/Goon";
 import * as Graphics from "../entities/Graphics";
 import { Currencies } from "../entities/Items";
 import Map from "../entities/Map";
@@ -16,7 +16,7 @@ export class DungeonScene extends Phaser.Scene {
     private player: Player | null = null;
     public fov: FOVLayer | null = null;
 
-    public goons: Goon[] = [];
+    public enemies: Enemy[] = [];
 
     private leftLines: Phaser.GameObjects.Graphics[] = [];
     private rightLines: Phaser.GameObjects.Graphics[] = [];
@@ -32,13 +32,17 @@ export class DungeonScene extends Phaser.Scene {
         this.load.audio("LifeWillChange", LifeWillChange);
         this.load.image(Graphics.environment.name, Graphics.environment.file);
         this.load.image(Graphics.util.name, Graphics.util.file);
+        this.load.spritesheet(Graphics.hearts.name, Graphics.hearts.file, {
+            frameWidth: 32,
+            frameHeight: 32,
+        });
         this.load.spritesheet(Graphics.player.name, Graphics.player.file, {
             frameHeight: Graphics.player.height,
             frameWidth: Graphics.player.width,
         });
-        this.load.spritesheet(Graphics.goon.name, Graphics.goon.file, {
-            frameHeight: Graphics.goon.height,
-            frameWidth: Graphics.goon.width,
+        this.load.spritesheet(Graphics.enemy.name, Graphics.enemy.file, {
+            frameHeight: Graphics.enemy.height,
+            frameWidth: Graphics.enemy.width,
         });
         this.load.spritesheet(Graphics.items.name, Graphics.items.file, {
             frameWidth: Graphics.items.width,
@@ -82,12 +86,12 @@ export class DungeonScene extends Phaser.Scene {
                 });
             }
         });
-        Object.values(Graphics.goon.animations).forEach((anim) => {
+        Object.values(Graphics.enemy.animations).forEach((anim) => {
             if (!this.anims.get(anim.key)) {
                 this.anims.create({
                     ...anim,
                     frames: this.anims.generateFrameNumbers(
-                        Graphics.goon.name,
+                        Graphics.enemy.name,
                         anim.frames
                     ),
                 });
@@ -182,7 +186,7 @@ export class DungeonScene extends Phaser.Scene {
             this
         );
 
-        this.goons = this.map.goons;
+        this.enemies = this.map.enemies;
     }
 
     private nextHeartbeat = 0;
@@ -197,8 +201,15 @@ export class DungeonScene extends Phaser.Scene {
 
             let queueMove = false;
             let queueAttack = false;
-            let enemy: Goon | null | undefined = null;
+            let enemy: Enemy | null | undefined = null;
             let tile: Tile | null | undefined = null;
+
+            if (this.player.queuedDirection !== Direction.None) {
+                this.player.combo++;
+            } else {
+                this.player.combo = 0;
+            }
+
             switch (this.player?.queuedDirection) {
                 case Direction.Left: {
                     enemy = this.map?.enemyAt(this.player.x - 1, this.player.y);
@@ -284,7 +295,7 @@ export class DungeonScene extends Phaser.Scene {
                     portal.enter();
                     const self = this;
                     setTimeout(() => {
-                        self.map!.regenerateDungeon();
+                        self.map!.regenerateDungeon(self.player!.level + 1);
                         const tweens = self.player!.updateXY(
                             self.tilemap!,
                             self.map!.portalX,

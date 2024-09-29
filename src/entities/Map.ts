@@ -2,10 +2,10 @@ import Dungeoneer from "dungeoneer";
 import * as Graphics from "./Graphics";
 import Tile, { TileType } from "./Tile";
 import { DungeonScene } from "../scenes/DungeonScene";
-import Goon from "./Goon";
 import Player from "./Player";
 import Item, { Armors, ItemData, Weapons } from "./Items";
 import Portal from "./Portal";
+import Enemy, { Chaser, Drone, Goon, Sentinel } from "./Enemy";
 
 export default class Map {
     public readonly width: number;
@@ -28,7 +28,7 @@ export default class Map {
 
     public rooms!: Dungeoneer.Room[];
 
-    public goons: Goon[] = [];
+    public enemies: Enemy[] = [];
     public items: Item[] = [];
     public portals: Portal[] = [];
 
@@ -58,10 +58,10 @@ export default class Map {
             throw new Error("Failed to load dungeon tiles");
         this.dungeonTiles = dungeonTiles;
 
-        this.regenerateDungeon();
+        this.regenerateDungeon(0);
     }
 
-    public regenerateDungeon() {
+    public regenerateDungeon(level: number) {
         const width = this.width;
         const height = this.height;
 
@@ -130,10 +130,10 @@ export default class Map {
         );
         this.groundLayer.setDepth(1);
 
-        for (const goon of this.goons) {
-            goon.destroy();
+        for (const enemy of this.enemies) {
+            enemy.destroy();
         }
-        this.goons = [];
+        this.enemies = [];
         for (let i = 0; i < dungeon.rooms.length; i++) {
             if (i === startingRoomNum) continue;
             const room = dungeon.rooms[i];
@@ -142,8 +142,8 @@ export default class Map {
                 continue;
             }
 
-            const numGoons = Phaser.Math.Between(1, 3);
-            for (let i = 0; i < numGoons; i++) {
+            const numDrones = Phaser.Math.Between(0, level + 2);
+            for (let i = 0; i < numDrones; i++) {
                 const x = Phaser.Math.Between(
                     room.x + 1,
                     room.x + room.width - 1
@@ -152,14 +152,77 @@ export default class Map {
                     room.y + 1,
                     room.y + room.height - 1
                 );
-                const newGoon = new Goon(
+                const newDrone = new Drone(
                     Phaser.Math.Snap.To(this.tilemap.tileToWorldX(x)!, 32),
                     Phaser.Math.Snap.To(this.tilemap.tileToWorldX(y)!, 32) + 4,
                     x,
                     y,
                     this.scene
                 );
-                this.goons.push(newGoon);
+                this.enemies.push(newDrone);
+            }
+
+            const numChasers = Phaser.Math.Between(0, level + 1);
+            for (let i = 0; i < numChasers; i++) {
+                const x = Phaser.Math.Between(
+                    room.x + 1,
+                    room.x + room.width - 1
+                );
+                const y = Phaser.Math.Between(
+                    room.y + 1,
+                    room.y + room.height - 1
+                );
+                const newChaser = new Chaser(
+                    Phaser.Math.Snap.To(this.tilemap.tileToWorldX(x)!, 32),
+                    Phaser.Math.Snap.To(this.tilemap.tileToWorldX(y)!, 32) + 4,
+                    x,
+                    y,
+                    this.scene
+                );
+                this.enemies.push(newChaser);
+            }
+
+            if (level >= 2) {
+                const numGoons = Phaser.Math.Between(0, 1);
+                for (let i = 0; i < numGoons; i++) {
+                    const x = Phaser.Math.Between(
+                        room.x + 1,
+                        room.x + room.width - 1
+                    );
+                    const y = Phaser.Math.Between(
+                        room.y + 1,
+                        room.y + room.height - 1
+                    );
+                    const newGoon = new Goon(
+                        Phaser.Math.Snap.To(this.tilemap.tileToWorldX(x)!, 32),
+                        Phaser.Math.Snap.To(this.tilemap.tileToWorldX(y)!, 32) +
+                            4,
+                        x,
+                        y,
+                        this.scene
+                    );
+                    this.enemies.push(newGoon);
+                }
+            }
+
+            const numSentinels = Phaser.Math.Between(1, 3);
+            for (let i = 0; i < numSentinels; i++) {
+                const x = Phaser.Math.Between(
+                    room.x + 1,
+                    room.x + room.width - 1
+                );
+                const y = Phaser.Math.Between(
+                    room.y + 1,
+                    room.y + room.height - 1
+                );
+                const newSentinel = new Sentinel(
+                    Phaser.Math.Snap.To(this.tilemap.tileToWorldX(x)!, 32) + 16,
+                    Phaser.Math.Snap.To(this.tilemap.tileToWorldX(y)!, 32) + 8,
+                    x,
+                    y,
+                    this.scene
+                );
+                this.enemies.push(newSentinel);
             }
         }
 
@@ -242,35 +305,27 @@ export default class Map {
         this.wallLayer = wallLayer;
         this.wallLayer.setDepth(2);
 
-        for (const portal of this.portals) {
-            portal.destroy();
-        }
-        this.portals = [];
-        let portalRoomNum = startingRoomNum;
-        while (portalRoomNum !== startingRoomNum) {
-            portalRoomNum = Phaser.Math.Between(0, this.rooms.length);
-        }
-        const portalRoom = this.rooms[portalRoomNum];
-        this.portalX = Phaser.Math.Between(
-            portalRoom.x + 1,
-            portalRoom.x + portalRoom.width - 1
-        );
-        this.portalY = Phaser.Math.Between(
-            portalRoom.y + 1,
-            portalRoom.y + portalRoom.height - 1
-        );
-        const newPortal = new Portal(
-            Phaser.Math.Snap.To(this.tilemap.tileToWorldX(this.portalX)!, 32) +
-                18,
-            Phaser.Math.Snap.To(this.tilemap.tileToWorldX(this.portalY)!, 32),
-            this.portalX,
-            this.portalY,
-            this.scene
-        );
-        this.portals.push(newPortal);
-
-        if (!this.portalSprite) {
-            this.portalSprite = this.scene.add.sprite(
+        // Ending position
+        {
+            for (const portal of this.portals) {
+                portal.destroy();
+            }
+            this.portals = [];
+            let portalRoomNum = startingRoomNum;
+            while (portalRoomNum === startingRoomNum) {
+                portalRoomNum = Phaser.Math.Between(0, this.rooms.length);
+            }
+            console.log(portalRoomNum, startingRoomNum, this.rooms.length);
+            const portalRoom = this.rooms[portalRoomNum];
+            this.portalX = Phaser.Math.Between(
+                portalRoom.x + 1,
+                portalRoom.x + portalRoom.width - 1
+            );
+            this.portalY = Phaser.Math.Between(
+                portalRoom.y + 1,
+                portalRoom.y + portalRoom.height - 1
+            );
+            const newPortal = new Portal(
                 Phaser.Math.Snap.To(
                     this.tilemap.tileToWorldX(this.portalX)!,
                     32
@@ -279,23 +334,59 @@ export default class Map {
                     this.tilemap.tileToWorldX(this.portalY)!,
                     32
                 ),
-                Graphics.teleporters.name,
-                5
+                this.portalX,
+                this.portalY,
+                this.scene
             );
-            this.portalSprite.setScale(2);
-            this.portalSprite.setDepth(10);
-            // this.portalSprite.anims.play(
-            //     Graphics.teleporters.animations.teleporterIdle.key
-            // );
-        } else {
-            this.portalSprite.x = Phaser.Math.Snap.To(
-                this.tilemap.tileToWorldX(this.portalX)!,
-                32
-            );
-            this.portalSprite.x = Phaser.Math.Snap.To(
-                this.tilemap.tileToWorldX(this.portalY)!,
-                32
-            );
+            this.portals.push(newPortal);
+
+            if (!this.portalSprite) {
+                this.portalSprite = this.scene.add.sprite(
+                    Phaser.Math.Snap.To(
+                        this.tilemap.tileToWorldX(this.portalX)!,
+                        32
+                    ) + 18,
+                    Phaser.Math.Snap.To(
+                        this.tilemap.tileToWorldX(this.portalY)!,
+                        32
+                    ),
+                    Graphics.teleporters.name,
+                    5
+                );
+                this.portalSprite.setScale(2);
+                this.portalSprite.setDepth(10);
+                // this.portalSprite.anims.play(
+                //     Graphics.teleporters.animations.teleporterIdle.key
+                // );
+            } else {
+                this.portalSprite.x = Phaser.Math.Snap.To(
+                    this.tilemap.tileToWorldX(this.portalX)!,
+                    32
+                );
+                this.portalSprite.x = Phaser.Math.Snap.To(
+                    this.tilemap.tileToWorldX(this.portalY)!,
+                    32
+                );
+            }
+
+            for (let i = 0; i < level + 1; i++) {
+                const x = Phaser.Math.Between(
+                    portalRoom.x + 1,
+                    portalRoom.x + portalRoom.width - 1
+                );
+                const y = Phaser.Math.Between(
+                    portalRoom.y + 1,
+                    portalRoom.y + portalRoom.height - 1
+                );
+                const newGoon = new Goon(
+                    Phaser.Math.Snap.To(this.tilemap.tileToWorldX(x)!, 32),
+                    Phaser.Math.Snap.To(this.tilemap.tileToWorldX(y)!, 32) + 4,
+                    x,
+                    y,
+                    this.scene
+                );
+                this.enemies.push(newGoon);
+            }
         }
     }
 
@@ -352,25 +443,49 @@ export default class Map {
     }
 
     public moveEnemies(player: Player) {
-        for (const goon of this.goons) {
-            if (goon.dead) continue;
-            let tile: Tile | null = this.tileAt(
-                goon.x + (goon.movingRight ? 1 : -1),
-                goon.y
-            );
-            if (!tile) continue;
-            if (tile.collides) {
-                goon.movingRight = !goon.movingRight;
+        for (const enemy of this.enemies) {
+            if (enemy.dead) continue;
+            let tile: Tile | null = null;
+            if (enemy.key === "goonIdle") {
+                const goon = enemy as Goon;
+                const dir = Math.floor(Math.random() * 4);
                 tile = this.tileAt(
-                    goon.x + (goon.movingRight ? 1 : -1),
-                    goon.y
+                    goon.x + (dir === 1 ? 1 : dir === 3 ? -1 : 0),
+                    goon.y + (dir === 0 ? 1 : dir === 2 ? -1 : 0)
                 );
+                if (!tile || tile.collides) continue;
+            } else if (enemy.key === "droneIdle") {
+                const drone = enemy as Drone;
+                tile = this.tileAt(
+                    drone.x + (drone.movingRight ? 1 : -1),
+                    drone.y
+                );
+                if (!tile) continue;
+                if (tile.collides) {
+                    drone.movingRight = !drone.movingRight;
+                    tile = this.tileAt(
+                        drone.x + (drone.movingRight ? 1 : -1),
+                        drone.y
+                    );
+                }
+            } else if (enemy.key === "chaserIdle") {
+                const drone = enemy as Chaser;
+                let dir = 0;
+                if (player.y < drone.y) dir = 2;
+                else if (player.y > drone.y) dir = 0;
+                else if (player.x > drone.x) dir = 1;
+                else if (player.x < drone.x) dir = 3;
+                tile = this.tileAt(
+                    drone.x + (dir === 1 ? 1 : dir === 3 ? -1 : 0),
+                    drone.y + (dir === 0 ? 1 : dir === 2 ? -1 : 0)
+                );
+                if (!tile || tile.collides) continue;
             }
             if (!tile) continue;
             if (tile.x === player.x && tile.y === player.y) {
                 player.health--;
             } else {
-                const tweens = goon.updateXY(this.tilemap, tile.x, tile.y);
+                const tweens = enemy.updateXY(this.tilemap, tile.x, tile.y);
                 for (const tween of tweens) {
                     this.scene.tweens.add(tween);
                 }
@@ -378,10 +493,10 @@ export default class Map {
         }
     }
 
-    public enemyAt(x: number, y: number): Goon | null {
-        for (const goon of this.goons) {
-            if (!goon.dead && goon.x === x && goon.y === y) {
-                return goon;
+    public enemyAt(x: number, y: number): Enemy | null {
+        for (const enemy of this.enemies) {
+            if (!enemy.dead && enemy.x === x && enemy.y === y) {
+                return enemy;
             }
         }
         return null;

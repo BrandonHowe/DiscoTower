@@ -35,6 +35,7 @@ export default class Player {
     public health = 5;
     public maxHealth = 5;
     public scrap = 0;
+    public combo = 0;
 
     public level: number = 0;
 
@@ -88,6 +89,18 @@ export default class Player {
         const right = keys.right.isDown || keys.d.isDown;
         const up = keys.up.isDown || keys.w.isDown;
         const down = keys.down.isDown || keys.s.isDown;
+
+        // if (
+        //     (left && !keys.leftNeedsUp) ||
+        //     (right && !keys.rightNeedsUp) ||
+        //     (up && !keys.upNeedsUp) ||
+        //     (down && !keys.downNeedsUp)
+        // ) {
+        //     console.log("Yeah");
+        //     this.combo++;
+        // } else {
+        //     this.combo = 0;
+        // }
 
         if (left) this.keys.leftNeedsUp = true;
         if (right) this.keys.rightNeedsUp = true;
