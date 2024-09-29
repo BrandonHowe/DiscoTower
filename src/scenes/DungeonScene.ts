@@ -6,8 +6,8 @@ import Map from "../entities/Map";
 import Player, { Direction } from "../entities/Player";
 import Tile, { TileType } from "../entities/Tile";
 
-const worldTileHeight = 81;
-const worldTileWidth = 81;
+const worldTileHeight = 25;
+const worldTileWidth = 25;
 
 export class DungeonScene extends Phaser.Scene {
     private map: Map | null = null;
@@ -38,6 +38,10 @@ export class DungeonScene extends Phaser.Scene {
         this.load.spritesheet(Graphics.goon.name, Graphics.goon.file, {
             frameHeight: Graphics.goon.height,
             frameWidth: Graphics.goon.width,
+        });
+        this.load.spritesheet(Graphics.items.name, Graphics.items.file, {
+            frameWidth: 32,
+            frameHeight: 32,
         });
         this.load.audio("LifeWillChange", LifeWillChange);
     }
@@ -95,6 +99,8 @@ export class DungeonScene extends Phaser.Scene {
             map.startingY,
             this
         );
+
+        this.scene.run("UIScene", { player: this.player });
 
         this.cameras.main.startFollow(this.player.sprite);
 
@@ -254,6 +260,14 @@ export class DungeonScene extends Phaser.Scene {
                     this.player.sprite.y,
                     32
                 );
+
+                const item = this.map?.itemAt(this.player.x, this.player.y);
+                if (item && this.map) {
+                    console.log("hit the item", item);
+                    this.map.items.splice(this.map.items.indexOf(item), 1);
+                    this.player.addItem(item.data);
+                    item.destroy();
+                }
             }
 
             this.map?.moveEnemies(this.player);

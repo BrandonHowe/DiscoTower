@@ -3,8 +3,7 @@ import * as Graphics from "./Graphics";
 import { Enemy } from "./Enemy";
 
 export default class Goon implements Enemy {
-    public readonly sprite: Phaser.Physics.Arcade.Sprite;
-    public readonly body: Phaser.Physics.Arcade.Body;
+    public readonly sprite: Phaser.GameObjects.Sprite;
 
     public x: number;
     public y: number;
@@ -23,18 +22,11 @@ export default class Goon implements Enemy {
         this.x = worldX;
         this.y = worldY;
 
-        this.sprite = scene.physics.add.sprite(x, y, Graphics.goon.name, 0);
+        this.sprite = scene.add.sprite(x, y, Graphics.goon.name, 0);
         this.sprite.setSize(8, 8);
-        this.sprite.setOffset(8, 16);
         this.sprite.setScale(2);
         this.sprite.anims.play(Graphics.goon.animations.idle.key);
         this.sprite.setDepth(10);
-
-        this.body = <Phaser.Physics.Arcade.Body>this.sprite.body;
-        this.sprite.x = x;
-        this.sprite.y = y;
-        this.body.bounce.set(0, 0);
-        this.body.setImmovable(true);
     }
 
     public updateXY(tilemap: Phaser.Tilemaps.Tilemap, x: number, y: number) {
@@ -55,7 +47,6 @@ export default class Goon implements Enemy {
 
     kill() {
         this.sprite.anims.play(Graphics.goon.animations.death.key, false);
-        this.sprite.disableBody();
         this.dead = true;
     }
 }

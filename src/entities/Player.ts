@@ -1,4 +1,5 @@
 import * as Graphics from "./Graphics";
+import Item, { Armor, Armors, ItemData, Weapon, Weapons } from "./Items";
 
 const speed = 125;
 const attackSpeed = 500;
@@ -42,6 +43,14 @@ export default class Player {
     public x: number;
     public y: number;
     public health = 5;
+    public maxHealth = 5;
+    public coins = 0;
+
+    public equippedWeapon: Weapon = Weapons.fist;
+    public weapons: Weapon[] = [Weapons.fist];
+
+    public equippedArmor: Armor = Armors.bare;
+    public armors: Armor[] = [Armors.bare];
 
     private emitter?: Phaser.GameObjects.Particles.ParticleEmitter;
     private flashEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -122,5 +131,17 @@ export default class Player {
         else if (right) this.queuedDirection = Direction.Right;
         else if (up) this.queuedDirection = Direction.Up;
         else if (down) this.queuedDirection = Direction.Down;
+    }
+
+    public addItem(item: ItemData) {
+        console.log(item);
+        if (item.type === "weapon") {
+            this.equippedWeapon = item as Weapon;
+            this.weapons.push(item);
+        }
+        if (item.type === "armor") {
+            this.equippedArmor = item as Armor;
+            this.armors.push(item);
+        }
     }
 }

@@ -1,5 +1,7 @@
 import Environment from "../assets/environment.png";
 import Enemies from "../assets/enemies.png";
+import Hearts from "../assets/hearts.png";
+import Items from "../assets/items.png";
 import PlayerBlue from "../assets/playerblue.png";
 import Util from "../assets/util.png";
 
@@ -111,6 +113,35 @@ export const goon: AnimSet = {
             hideOnComplete: true,
         },
     },
+};
+
+export const hearts = {
+    name: "hearts",
+    width: 32,
+    height: 32,
+    margin: 0,
+    spacing: 0,
+    file: Hearts,
+    indices: {
+        full: 0x00,
+        empty: 0x01,
+        scrap: 0x02,
+    },
+};
+
+export const items = {
+    name: "items",
+    width: 32,
+    height: 32,
+    margin: 0,
+    spacing: 0,
+    file: Items,
+    indices: {
+        fist: 0x00,
+        dagger: 0x01,
+        nothing: 0x10,
+        tunic: 0x11,
+    } as Record<string, number>,
 };
 
 export const util = {

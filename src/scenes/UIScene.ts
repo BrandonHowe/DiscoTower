@@ -1,58 +1,124 @@
+import * as Graphics from "../entities/Graphics";
 import Phaser from "phaser";
+import Player from "../entities/Player";
 
 export default class UIScene extends Phaser.Scene {
-    private leftLines: Phaser.GameObjects.Graphics[] = [];
-    private rightLines: Phaser.GameObjects.Graphics[] = [];
+    private player: Player | null = null;
+
+    // public tilemap: Phaser.Tilemaps.Tilemap | null;
+    // private heartsLayer: Phaser.Tilemaps.TilemapLayer | null;
+    private hearts: Phaser.GameObjects.Sprite[] = [];
+    private weapon: Phaser.GameObjects.Sprite | null = null;
+    private armor: Phaser.GameObjects.Sprite | null = null;
+    private scrapText: Phaser.GameObjects.Text | null = null;
 
     constructor() {
         super({ key: "UIScene" });
     }
 
     preload(): void {
+        this.load.spritesheet(Graphics.items.name, Graphics.items.file, {
+            frameWidth: 32,
+            frameHeight: 32,
+        });
+
+        this.load.spritesheet(Graphics.hearts.name, Graphics.hearts.file, {
+            frameWidth: 32,
+            frameHeight: 32,
+        });
     }
 
-    create({ left, right }: { left: Phaser.GameObjects.Graphics[], right: Phaser.GameObjects.Graphics[] }): void {
-        this.leftLines = left;
-        this.rightLines = right;
-    }
+    create({ player }: { player: Player }): void {
+        this.player = player;
 
-    // private nextHeartbeat = 0;
-    // update(time: number, _: number): void {
-    //     const timeToNextHeartbeat = this.nextHeartbeat - time;
-    //     for (let i = 0; i < this.leftLines.length; i++) {
-    //         const line = this.leftLines[i];
-    //         line.x = (window.innerWidth / 2) - (100 * i) - (timeToNextHeartbeat / 10);
-    //         this.drawLine(line);
-    //     }
-
-    //     for (let i = 0; i < this.rightLines.length; i++) {
-    //         const line = this.rightLines[i];
-    //         line.x = (window.innerWidth / 2) + (100 * i) + (timeToNextHeartbeat / 10);
-    //         this.drawLine(line);
-    //     }
-    // }
-
-    update() {
-        for (const line of this.leftLines) {
-            this.drawLine(line);
+        const startX = this.cameras.main.width - 90 * 5 - 120;
+        for (let i = 0; i < this.player.maxHealth; i++) {
+            const full = this.player.health >= i + 1;
+            const heart = this.add.sprite(
+                startX + i * 90,
+                80,
+                Graphics.hearts.name,
+                Graphics.hearts.indices[full ? "full" : "empty"]
+            );
+            heart.scale = 3;
+            heart.setScrollFactor(0); // Make sure the hearts are not affected by camera movement
+            this.hearts.push(heart);
         }
-        for (const line of this.rightLines) {
-            this.drawLine(line);
-        }
+
+        const weaponRect = this.add.graphics();
+        weaponRect.lineStyle(3, 0xdddddd);
+        weaponRect.fillStyle(0x0);
+        weaponRect.fillRect(30, 40, 100, 100);
+        weaponRect.strokeRect(30, 40, 100, 100);
+        this.add.text(30, 20, "Weapon");
+        this.weapon = this.add
+            .sprite(
+                82,
+                88,
+                Graphics.items.name,
+                Graphics.items.indices[
+                    player.equippedWeapon.name as "fist" | "dagger"
+                ]
+            )
+            .setScrollFactor(0);
+        this.weapon.scale = 4;
+
+        const armorRect = this.add.graphics();
+        armorRect.lineStyle(3, 0xdddddd);
+        armorRect.fillStyle(0x0);
+        armorRect.fillRect(180, 40, 100, 100);
+        armorRect.strokeRect(180, 40, 100, 100);
+        this.add.text(180, 20, "Armor");
+        this.armor = this.add
+            .sprite(
+                232,
+                88,
+                Graphics.items.name,
+                Graphics.items.indices[player.equippedArmor.name]
+            )
+            .setScrollFactor(0);
+        this.armor.scale = 4;
+
+        const scrap = this.add
+            .sprite(
+                this.cameras.main.width - 100,
+                75,
+                Graphics.hearts.name,
+                Graphics.hearts.indices.scrap
+            )
+            .setScrollFactor(0);
+        scrap.scale = 3;
+        this.scrapText = this.add.text(
+            this.cameras.main.width - 55,
+            65,
+            `x${this.player.coins}`,
+            { fontSize: 24 }
+        );
     }
 
-    public drawLine(line: Phaser.GameObjects.Graphics) {
-        line.setDepth(1000);
-        // Clear the previous line drawing
-        line.clear();
-      
-        // Set line style (color: white, thickness: 5)
-        line.lineStyle(5, 0x00ffff);
-      
-        // Draw a vertical line from the top to the bottom of the screen
-        line.beginPath();
-        line.moveTo(0, 500);
-        line.lineTo(0, 600);
-        line.strokePath();
+    update(time: number, delta: number) {
+        if (!this.player) return;
+
+        if (this.hearts.length) {
+            // console.log(this.player.health);
+            for (let i = 0; i < this.player.maxHealth; i++) {
+                const full = this.player.health >= i + 1;
+                this.hearts[i].setFrame(
+                    Graphics.hearts.indices[full ? "full" : "empty"]
+                );
+            }
+        }
+
+        if (this.weapon) {
+            this.weapon.setFrame(
+                Graphics.items.indices[this.player.equippedWeapon.key]
+            );
+        }
+
+        if (this.armor) {
+            this.armor.setFrame(
+                Graphics.items.indices[this.player.equippedArmor.key]
+            );
+        }
     }
 }

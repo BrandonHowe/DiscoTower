@@ -1,9 +1,10 @@
-import Dungeoneer from "dungeoneer";
+import Dungeoneer, { Dungeon } from "dungeoneer";
 import * as Graphics from "./Graphics";
 import Tile, { TileType } from "./Tile";
 import { DungeonScene } from "../scenes/DungeonScene";
 import Goon from "./Goon";
 import Player from "./Player";
+import Item, { Armors, ItemData, Weapons } from "./Items";
 
 export default class Map {
     public readonly width: number;
@@ -23,10 +24,14 @@ export default class Map {
     public readonly rooms: Dungeoneer.Room[];
 
     public readonly goons: Goon[] = [];
+    public readonly items: Item[] = [];
+
+    private readonly scene: DungeonScene;
 
     constructor(width: number, height: number, scene: DungeonScene) {
         this.width = width;
         this.height = height;
+        this.scene = scene;
 
         // Generate dungeon
         const dungeon = Dungeoneer.build({
@@ -102,7 +107,9 @@ export default class Map {
         this.groundLayer = groundLayer;
         this.groundLayer.setDepth(1);
 
-        for (let room of dungeon.rooms) {
+        for (let i = 0; i < dungeon.rooms.length; i++) {
+            if (i === roomNumber) continue;
+            const room = dungeon.rooms[i];
             // groundLayer.randomize(
             //     room.x - 1,
             //     room.y - 1,
@@ -115,7 +122,7 @@ export default class Map {
                 continue;
             }
 
-            const numGoons = Phaser.Math.Between(1, 1);
+            const numGoons = Phaser.Math.Between(1, 3);
             for (let i = 0; i < numGoons; i++) {
                 const x = Phaser.Math.Between(
                     room.x + 1,
@@ -135,6 +142,9 @@ export default class Map {
                 this.goons.push(newGoon);
             }
         }
+
+        this.createItem(Weapons.dagger, roomNumber);
+        this.createItem(Armors.tunic, roomNumber);
 
         // Init walls and doors
         const wallLayer = this.tilemap.createBlankLayer(
@@ -196,6 +206,25 @@ export default class Map {
         this.wallLayer.setDepth(2);
     }
 
+    public createItem(item: ItemData, excludeRoom: number) {
+        let weaponRoom = excludeRoom;
+        while (weaponRoom !== excludeRoom) {
+            weaponRoom = Phaser.Math.Between(0, this.rooms.length);
+        }
+        const room = this.rooms[weaponRoom];
+        const x = Phaser.Math.Between(room.x + 1, room.x + room.width - 1);
+        const y = Phaser.Math.Between(room.y + 1, room.y + room.height - 1);
+        const newItem = new Item(
+            Phaser.Math.Snap.To(this.tilemap.tileToWorldX(x)!, 32),
+            Phaser.Math.Snap.To(this.tilemap.tileToWorldX(y)!, 32),
+            x,
+            y,
+            item,
+            this.scene
+        );
+        this.items.push(newItem);
+    }
+
     public tileAt(x: number, y: number): Tile | null {
         if (y < 0 || y >= this.height || x < 0 || x >= this.width) {
             return null;
@@ -246,6 +275,15 @@ export default class Map {
         for (const goon of this.goons) {
             if (!goon.dead && goon.x === x && goon.y === y) {
                 return goon;
+            }
+        }
+        return null;
+    }
+
+    public itemAt(x: number, y: number): Item | null {
+        for (const item of this.items) {
+            if (item.x === x && item.y === y) {
+                return item;
             }
         }
         return null;
