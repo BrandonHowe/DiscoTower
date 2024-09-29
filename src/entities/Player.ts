@@ -172,6 +172,44 @@ export default class Player {
         ];
     }
 
+    public takeDamage(tilemap: Phaser.Tilemaps.Tilemap, damage: number): Phaser.Types.Tweens.TweenBuilderConfig[] {
+        if (damage <= 0) return [];
+
+        this.health -= damage;
+        if (this.health <= 0) {
+            this.sprite.anims.play(Graphics.player.animations.playerDeath.key);
+        } else {
+            this.sprite.anims.play(Graphics.player.animations.playerDamaged.key);
+            console.log(Graphics.player.animations.playerDamaged.key);
+            this.sprite.once("animationComplete", (animation: { key: string }) => {
+                console.log("we done", animation);
+                if (animation.key === Graphics.player.animations.playerDamaged.key) {
+                    this.sprite.anims.play(Graphics.player.animations.idle.key);
+                }
+            });
+        }
+        const tweens: Phaser.Types.Tweens.TweenBuilderConfig[] = [];
+        const originalX = Phaser.Math.Snap.To(tilemap.tileToWorldX(this.x)!, 32) + 16;
+        for (let i = 0; i < 5; i++) {
+            const offset = (i % 2 === 0) ? 10 : -10;
+            tweens.push({
+                targets: [this.sprite],
+                x: originalX + offset,
+                y: this.sprite.y,
+                duration: 40,
+                delay: i * 40
+            });
+        }
+        tweens.push({
+            targets: [this.sprite],
+            x: originalX,
+            y: this.sprite.y,
+            duration: 20,
+            delay: 200
+        });
+        return tweens;
+    }
+
     public addItem(item: ItemData) {
         if (item.type === "weapon") {
             this.equippedWeapon = item as Weapon;
@@ -182,7 +220,7 @@ export default class Player {
             this.armors.push(item);
         }
         if (item.type === "currency") {
-            if (item.key === "scrap") this.scrap++;
+            if (item.key === "scrap") this.scrap += item.amount;
         }
     }
 }

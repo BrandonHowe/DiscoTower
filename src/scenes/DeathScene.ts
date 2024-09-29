@@ -11,13 +11,13 @@ export default class DeathScene extends Phaser.Scene {
 
     create(): void {
         const startButton = this.add
-            .rectangle(800, 780, 250, 80, 0xff0000)
+            .rectangle(window.innerWidth / 2, 600, 250, 80, 0xff0000)
             .setInteractive();
 
         startButton.setDepth(5);
 
         const text = this.add
-            .text(800, 780, "Try Again", { fontSize: "32px" })
+            .text(window.innerWidth / 2, 600, "Try Again", { fontSize: "32px" })
             .setOrigin(0.5);
         text.setDepth(5);
 
@@ -27,15 +27,15 @@ export default class DeathScene extends Phaser.Scene {
         });
 
         const loreBox = this.add
-            .rectangle(800, 500, 600, 700, 0xcccccc)
+            .rectangle(window.innerWidth / 2, 360, 600, 600, 0xcccccc)
             .setInteractive();
 
-        this.add.text(700, 200, "YOU DIED!", {
+        this.add.text(window.innerWidth / 2 - 100, 100, "YOU DIED!", {
             fontSize: "32px",
             color: "#000",
         });
 
-        this.add.text(515, 250, "You died! Would you like to try again?", {
+        this.add.text(window.innerWidth / 2 - 290, 150, "You died! Would you like to try again?", {
             fontSize: "28px",
             color: "#000",
             wordWrap: { width: 600 },

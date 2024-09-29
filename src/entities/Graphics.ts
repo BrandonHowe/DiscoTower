@@ -92,6 +92,21 @@ export const player: AnimSet = {
             frameRate: 6,
             repeat: -1,
         },
+        playerAttack: {
+            key: "playerAttack",
+            frames: { start: 40, end: 43 },
+            frameRate: 16
+        },
+        playerDamaged: {
+            key: "playerDamaged",
+            frames: { start: 35, end: 38 },
+            frameRate: 16,
+        },
+        playerDeath: {
+            key: "playerDeath",
+            frames: { start: 50, end: 56 },
+            frameRate: 16,
+        }
     },
 };
 

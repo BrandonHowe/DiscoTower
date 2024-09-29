@@ -1,8 +1,8 @@
-import LifeWillChange from "../assets/LifeWillChange.mp3";
+import LifeWillChange from "url:../assets/LifeWillChange.mp3";
 import Enemy from "../entities/Enemy";
 import FOVLayer from "../entities/FOV";
 import * as Graphics from "../entities/Graphics";
-import { Currencies } from "../entities/Items";
+import { Currencies, Currency } from "../entities/Items";
 import Map from "../entities/Map";
 import Player, { Direction } from "../entities/Player";
 import Tile, { TileType } from "../entities/Tile";
@@ -155,7 +155,7 @@ export class DungeonScene extends Phaser.Scene {
             ) as number,
             y: this.tilemap!.worldToTileY(
                 this.player!.sprite.body!.y
-            ) as number,
+            ) as number + 1,
         });
 
         const bounds = new Phaser.Geom.Rectangle(
@@ -280,9 +280,13 @@ export class DungeonScene extends Phaser.Scene {
                 }
             }
             if (queueAttack && enemy) {
-                const killed = enemy.attack(this.player.equippedWeapon.attack);
-                if (killed && this.map) {
-                    this.map.placeItem(Currencies.scrap, enemy.x, enemy.y);
+                const res = enemy.attack(this.tilemap!, this.player.equippedWeapon.attack);
+                if (res.killed && this.map) {
+                    const scrap = this.map.placeItem(Currencies.scrap, enemy.x, enemy.y);
+                    (scrap.data as Currency).amount = this.player.combo > 10 ? 2 : 1;
+                }
+                for (const tween of res.tweens) {
+                    this.tweens.add(tween);
                 }
                 this.player.queuedDirection = Direction.None;
             }
@@ -315,11 +319,12 @@ export class DungeonScene extends Phaser.Scene {
                     return;
                 }
 
-                const item = this.map.itemAt(this.player.x, this.player.y);
-                if (item) {
+                let item = this.map.itemAt(this.player.x, this.player.y);
+                while (item) {
                     this.map.items.splice(this.map.items.indexOf(item), 1);
                     this.player.addItem(item.data);
                     item.destroy();
+                    item = this.map.itemAt(this.player.x, this.player.y);
                 }
             }
 

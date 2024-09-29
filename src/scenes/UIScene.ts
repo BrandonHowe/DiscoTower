@@ -135,6 +135,7 @@ export default class UIScene extends Phaser.Scene {
                 this.hearts[i].setFrame(
                     Graphics.hearts.indices[full ? "full" : "empty"]
                 );
+                this.hearts[i].updateDisplayOrigin();
             }
         }
 
@@ -144,10 +145,18 @@ export default class UIScene extends Phaser.Scene {
             );
         }
 
+        if (this.weaponText) {
+            this.weaponText.setText(`Weapon - ${this.player.equippedWeapon.attack} ATK`);
+        }
+
         if (this.armor) {
             this.armor.setFrame(
                 Graphics.items.indices[this.player.equippedArmor.key]
             );
+        }
+
+        if (this.armorText) {
+            this.armorText.setText(`Armor - ${this.player.equippedArmor.defense} ATK`);
         }
 
         if (this.scrapText) {

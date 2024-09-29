@@ -165,7 +165,7 @@ export default class Map {
             this.height,
             Graphics.environment.indices.floor.outerCorridor
         );
-        this.groundLayer.setDepth(1);
+        this.groundLayer.setDepth(2);
 
         for (const enemy of this.enemies) {
             enemy.destroy();
@@ -174,12 +174,13 @@ export default class Map {
         for (let i = 0; i < dungeon.rooms.length; i++) {
             if (i === startingRoomNum) continue;
             const room = dungeon.rooms[i];
+            const roomSize = room.width * room.height;
 
             if (room.height < 4 || room.width < 4) {
                 continue;
             }
 
-            const numDrones = Phaser.Math.Between(0, level + 2);
+            const numDrones = Phaser.Math.Between(Math.floor(roomSize / 20), level + 2 + Math.floor(roomSize / 20));
             for (let i = 0; i < numDrones; i++) {
                 const x = Phaser.Math.Between(
                     room.x + 1,
@@ -479,6 +480,7 @@ export default class Map {
             this.scene
         );
         this.items.push(newItem);
+        return newItem;
     }
 
     public tileAt(x: number, y: number): Tile | null {
@@ -531,6 +533,11 @@ export default class Map {
                 }
             } else if (enemy.key === "chaserIdle") {
                 const drone = enemy as Chaser;
+                if (drone.turnTimer === 0) {
+                    drone.turnTimer++;
+                    continue;
+                }
+                drone.turnTimer = 0;
                 let dir = 0;
                 if (player.y < drone.y) dir = 2;
                 else if (player.y > drone.y) dir = 0;
@@ -573,15 +580,17 @@ export default class Map {
                 // }
             }
             if (!tile) continue;
+            let tweens: Phaser.Types.Tweens.TweenBuilderConfig[] = [];
             if (tile.x === player.x && tile.y === player.y && !tookDamage) {
-                player.health -=
-                    enemy.attackStrength - player.equippedArmor.defense;
+                console.log(enemy.x, enemy.y, tile.x, tile.y, tookDamage);
+                tweens = player.takeDamage(this.tilemap!, enemy.attackStrength - player.equippedArmor.defense);
                 tookDamage = true;
-            } else {
-                const tweens = enemy.updateXY(this.tilemap, tile.x, tile.y);
-                for (const tween of tweens) {
-                    this.scene.tweens.add(tween);
-                }
+            }
+            if (enemy.key !== "chaserIdle" || !tookDamage) {
+                tweens.push(...enemy.updateXY(this.tilemap, tile.x, tile.y));
+            }
+            for (const tween of tweens) {
+                this.scene.tweens.add(tween);
             }
         }
     }
@@ -617,14 +626,19 @@ export default class Map {
         this.tintingEven = !this.tintingEven;
 
         const presets = [
-            [0xff0000, 0xffffff],
+            [0xFF6EC7, 0x00cccc],
             [0x0000ff, 0xffd700],
             [0xffc0cb, 0x00ff00],
         ];
 
         const currentTint =
             presets[level % presets.length][Number(this.tintingEven)];
+        const altTint =
+            presets[level % presets.length][Number(!this.tintingEven)];
+    
 
         this.groundLayer.setTint(currentTint);
+        this.wallLayer.setTint(altTint);
+        this.doorLayer.setTint(altTint);
     }
 }

@@ -131,7 +131,7 @@ export default class Enemy {
         ];
     }
 
-    public attack(damage: number): boolean {
+    public attack(tilemap: Phaser.Tilemaps.Tilemap, damage: number): { killed: boolean, tweens: Phaser.Types.Tweens.TweenBuilderConfig[] } {
         this.health -= damage;
         for (let i = 0; i < this.maxHealth; i++) {
             const full = this.health >= i + 1;
@@ -143,19 +143,38 @@ export default class Enemy {
             );
             heart.visible = true;
         }
+        const tweens: Phaser.Types.Tweens.TweenBuilderConfig[] = [];
+        const originalX = Phaser.Math.Snap.To(tilemap.tileToWorldX(this.x)!, 32) + 16;
+        for (let i = 0; i < 5; i++) {
+            const offset = (i % 2 === 0) ? 10 : -10;
+            tweens.push({
+                targets: [this.container],
+                x: originalX + offset,
+                y: this.container.y,
+                duration: 40,
+                delay: i * 40
+            });
+        }
+        tweens.push({
+            targets: [this.container],
+            x: originalX,
+            y: this.container.y,
+            duration: 20,
+            delay: 200
+        });
         if (this.health <= 0) {
             this.kill();
-            return true;
+            return { killed: true, tweens };
         }
-        return false;
+        return { killed: false, tweens };
     }
 
     kill() {
+        this.dead = true;
         this.sprite.anims.play(
             Graphics.enemy.animations[this.deathKey].key,
             false
         );
-        this.dead = true;
         for (const heart of this.hearts) {
             heart.destroy();
         }
@@ -182,6 +201,8 @@ export class Sentinel extends Enemy {
 }
 
 export class Chaser extends Enemy {
+    public turnTimer: number = 0;
+
     constructor(
         x: number,
         y: number,

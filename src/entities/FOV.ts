@@ -88,7 +88,7 @@ export default class FOVLayer {
         for (let row of this.map.tiles) {
             for (let tile of row) {
                 if (tile.seen) {
-                tile.desiredAlpha = fogAlpha;
+                    tile.desiredAlpha = fogAlpha;
                 }
             }
         }
