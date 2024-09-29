@@ -268,7 +268,7 @@ export default class Map {
         }
         this.items = [];
         this.createItem(Weapons.dagger, startingRoomNum);
-        this.createItem(Armors.tunic, startingRoomNum);
+        if (level >= 1) this.createItem(Armors.tunic, startingRoomNum);
 
         // Init walls and doors
         let wallLayer = this.tilemap.getLayer("Wall")?.tilemapLayer;
