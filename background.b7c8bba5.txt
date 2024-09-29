@@ -1,0 +1,13 @@
+precision mediump float;
+
+uniform vec2 iResolution; // Screen resolution
+uniform float iTime;      // Time
+
+void main() {
+
+    // Change color based on time
+    float color = 0.5 + 0.5 * cos(iTime * 3.0);
+
+    // Set the color to red
+    gl_FragColor = vec4(color, 0, 0,  1.0); // RGBA (Red, Green, Blue, Alpha)
+}
