@@ -1,3 +1,4 @@
+import BackgroundShader from "url:../assets/background.txt";
 import LifeWillChange from "url:../assets/LifeWillChange.mp3";
 import Oof from "url:../assets/oof.mp3";
 import Clang from "url:../assets/clang.mp3";
@@ -52,6 +53,8 @@ export class DungeonScene extends Phaser.Scene {
     }
 
     preload(): void {
+        // this.load.text("BackgroundShaderText", BackgroundShader);
+        this.load.glsl("BackgroundShader", BackgroundShader);
         this.load.audio("LifeWillChange", LifeWillChange);
         this.load.audio("Clang", Clang);
         this.load.audio("Oof", Oof);
@@ -148,6 +151,7 @@ export class DungeonScene extends Phaser.Scene {
 
         this.input.keyboard!.on("keydown-F", () => {
             this.fov!.layer.setVisible(!this.fov!.layer.visible);
+            this.fov!.setEnabled(!this.fov!.enabled);
         });
 
         for (const line of this.leftLines) line.destroy();
@@ -158,13 +162,13 @@ export class DungeonScene extends Phaser.Scene {
         for (let i = window.innerWidth - 100; i > 0; i -= 100) {
             const leftLine = this.add.graphics();
             leftLine.x = i; // Set each line's initial position
-            this.drawLine(leftLine);
+            this.drawLine(leftLine, 0);
             this.leftLines.push(leftLine);
             leftLine.setScrollFactor(0);
 
             const rightLine = this.add.graphics();
             rightLine.x = window.innerWidth - i; // Set each line's initial position
-            this.drawLine(rightLine);
+            this.drawLine(rightLine, 0);
             this.rightLines.push(rightLine);
             rightLine.setScrollFactor(0);
         }
@@ -205,8 +209,8 @@ export class DungeonScene extends Phaser.Scene {
             const dist = timeToNextHeartbeat / 5 + (this.msPerBeat * i) / 5;
             left.x = window.innerWidth / 2 - dist;
             right.x = window.innerWidth / 2 + dist;
-            this.drawLine(left);
-            this.drawLine(right);
+            this.drawLine(left, time);
+            this.drawLine(right, time);
         }
     }
 
@@ -397,7 +401,7 @@ export class DungeonScene extends Phaser.Scene {
         }
     }
 
-    public drawLine(line: Phaser.GameObjects.Graphics) {
+    public drawLine(line: Phaser.GameObjects.Graphics, time: number) {
         line.setDepth(1000);
         // Clear the previous line drawing
         line.clear();
@@ -407,8 +411,11 @@ export class DungeonScene extends Phaser.Scene {
 
         // Draw a vertical line from the top to the bottom of the screen
         line.beginPath();
-        line.moveTo(0, (window.innerHeight * 3) / 4 - 50);
-        line.lineTo(0, (window.innerHeight * 3) / 4 - 25);
+        const timeToNextHeartbeat = this.nextHeartbeat - time;
+        const start = timeToNextHeartbeat < 100 ? 52 : 50;
+        const end = timeToNextHeartbeat < 100 ? 23 : 25;
+        line.moveTo(0, (window.innerHeight * 3) / 4 - start);
+        line.lineTo(0, (window.innerHeight * 3) / 4 - end);
         line.strokePath();
     }
 }

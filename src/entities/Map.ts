@@ -169,9 +169,6 @@ export default class Map {
         );
         this.groundLayer.setDepth(2);
 
-        let entityLayer: Phaser.Tilemaps.TilemapLayer | null | undefined =
-            this.tilemap.getLayer("Entity")?.tilemapLayer;
-
         for (const enemy of this.enemies) {
             enemy.destroy();
         }
@@ -624,6 +621,19 @@ export default class Map {
             }
         }
         return null;
+    }
+
+    public spritesAt(x: number, y: number): Phaser.GameObjects.Sprite[] {
+        const res: Phaser.GameObjects.Sprite[] = [];
+        const portals = this.portals.filter((l) => l.x === x && l.y === y);
+        const items = this.items.filter((l) => l.x === x && l.y === y);
+        const enemies = this.enemies.filter(
+            (l) => l.x === x && l.y === y && !l.dead
+        );
+        res.push(...portals.map((l) => l.sprite));
+        res.push(...items.map((l) => l.sprite));
+        res.push(...enemies.map((l) => l.sprite));
+        return res;
     }
 
     public toggleTint(level: number) {

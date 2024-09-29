@@ -16,7 +16,9 @@ const updateTileAlpha = (
     desiredAlpha: number,
     delta: number,
     tile: Phaser.Tilemaps.Tile,
-    beneathTile: Phaser.Tilemaps.Tile[]
+    beneathTile: Phaser.Tilemaps.Tile[],
+    sprites: Phaser.GameObjects.Sprite[],
+    enabled: boolean
 ) => {
     // Update faster the further away we are from the desired value,
     // but restrict the lower bound so we don't get it slowing
@@ -32,16 +34,18 @@ const updateTileAlpha = (
             Phaser.Math.MaxAdd(tile.alpha, updateFactor, desiredAlpha)
         );
     }
-    if (tile.alpha === 1) {
+    if (tile.alpha === 1 && enabled) {
         tile.visible = false;
         for (const tile of beneathTile) {
             if (tile) tile.visible = false;
         }
+        for (const sprite of sprites) sprite?.setVisible(false);
     } else {
         tile.visible = true;
         for (const tile of beneathTile) {
-            if (tile) tile.visible = false;
+            if (tile) tile.visible = true;
         }
+        for (const sprite of sprites) sprite.setVisible(true);
     }
 };
 
@@ -50,6 +54,8 @@ export default class FOVLayer {
     private mrpas: Mrpas | undefined;
     private lastPos: Phaser.Math.Vector2;
     private map: Map;
+
+    public enabled = true;
 
     constructor(map: Map) {
         const utilTiles = map.tilemap.addTilesetImage("util");
@@ -105,7 +111,15 @@ export default class FOVLayer {
                     this.map.wallLayer.getTileAt(x, y),
                     this.map.doorLayer.getTileAt(x, y),
                 ];
-                updateTileAlpha(desiredAlpha, delta, tile, beneathTile);
+                const sprites = this.map.spritesAt(x, y);
+                updateTileAlpha(
+                    desiredAlpha,
+                    delta,
+                    tile,
+                    beneathTile,
+                    sprites,
+                    this.enabled
+                );
             }
         }
     }
@@ -141,5 +155,9 @@ export default class FOVLayer {
                 this.map.tiles[y][x].seen = true;
             }
         );
+    }
+
+    public setEnabled(val: boolean) {
+        this.enabled = val;
     }
 }

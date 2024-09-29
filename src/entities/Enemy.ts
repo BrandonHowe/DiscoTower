@@ -184,6 +184,7 @@ export default class Enemy {
             Graphics.enemy.animations[this.deathKey].key,
             false
         );
+        this.sprite.once("animationComplete", () => this.sprite.destroy());
         for (const heart of this.hearts) {
             heart.destroy();
         }
