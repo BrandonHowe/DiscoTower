@@ -1,50 +1,33 @@
-# React + TypeScript + Vite
+# Disco Tower
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Disco Tower is a game I made by myself in 24 hours for [GirlHacks 2024](https://www.girlhacks.tech/).
 
-Currently, two official plugins are available:
+### Links
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+|[Play it yourself!](https://brandonhowe.github.io/DiscoTower/)|[Demo video](https://youtu.be/i1IeDUydh08)|[Submission on DevPost](https://devpost.com/software/disco-tower)|
+|---|---|---|
 
-## Expanding the ESLint configuration
+![Thumbnail](https://github.com/user-attachments/assets/b3440f02-b833-46e6-b988-23e5f0cc0b6e)
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+### Premise
 
-- Configure the top-level `parserOptions` property like this:
+The Disco Tower, once a place of music and joy, is now under the control of evil AI robots who want to replace humanity. What was once a glowing beacon of dance and creativity is now a dark, cold fortress filled with machines trying to erase human art. Climb the tower and out-dance the robots to prove the greatness of human creativity and dance moves!
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+Disco Tower is a roguelike rhythm game that takes the core elements of an exploration game, and adds a beat-matching rhythm to it. Your actions are most effective when in sync with the beat, and keeping up your combo by moving around is critical to beating the harder levels! You can explore the dungeon, equip new items, defeat robots, and find the teleporter to move up to the next floor. The tower is procedurally generated, so every single game is different! Each robot also has their own movement patterns that you can strategize around. Even if you're entering a room full of robots, you can still destroy them by using good timing! There are a variety of weapons and armor upgrades to collect, and killing robots awards you with scrap metal.
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+### Game Features
+- Movement is in sync with the beat of the song
+- Procedurally generated tower layout
+- Collectible weapons, armor, health upgrades, and currency
+- Combat system with a variety of different enemy types
+- Exploration system with fog and limited field-of-view
+- Multiple levels with each level getting more and more difficult, culminating in a final boss
+- Built in TypeScript using [Phaser](https://phaser.io/)
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+### Gameplay Screenshots
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+![Gameplay 1](https://github.com/user-attachments/assets/3968c449-48c5-4632-a327-b25c906dfd28)
+![Gameplay 2](https://github.com/user-attachments/assets/616a40ef-d198-4df1-9319-3248873385aa)
+![Gameplay 3](https://github.com/user-attachments/assets/3a05a71b-59a1-4424-80d6-417031d46f33)
+![Gameplay 4](https://github.com/user-attachments/assets/52b57bb0-f797-4876-90e4-ef9a0fa1d451)
+![Gameplay 5](https://github.com/user-attachments/assets/90054df7-bbb1-46ca-8822-3cc729042608)
